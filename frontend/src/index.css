@@ -1,0 +1,23 @@
+@import 'mafs/core.css';
+@import 'mafs/font.css';
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center; 
+  /* Wait, place-items center centers everything? Maybe default boilerplate was bad. */
+  /* Let's reset better */
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Reset layout specificities from default vite */
+#root {
+  width: 100%;
+}
