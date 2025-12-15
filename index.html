@@ -1,1021 +1,166 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>几何线性代数实验室 (GeoLinAlg)</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --text: #f8fafc;
-            --accent: #38bdf8;
-            --border: #334155;
-            --danger: #ef4444;
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: "Segoe UI", system-ui, sans-serif;
-            overflow: hidden;
-            display: flex;
-            height: 100vh;
-            user-select: none;
-        }
-
-        /* Layout */
-        #sidebar {
-            width: 320px;
-            background: var(--panel);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 20;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
-        }
-
-        #main {
-            flex: 1;
-            position: relative;
-            cursor: crosshair;
-        }
-
-        #canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* UI Components */
-        .header {
-            padding: 15px;
-            background: #0b1120;
-            border-bottom: 1px solid var(--border);
-            font-weight: 600;
-            font-size: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--accent);
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        button {
-            background: #334155;
-            color: white;
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 100%;
-        }
-
-        button:hover:not(:disabled) {
-            background: #475569;
-            border-color: #64748b;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        button.primary {
-            background: var(--accent);
-            color: #0f172a;
-            border-color: var(--accent);
-            font-weight: 700;
-        }
-
-        button.secondary {
-            background: transparent;
-            border: 1px dashed #64748b;
-            color: #94a3b8;
-        }
-
-        .section {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 15px;
-        }
-
-        .section-title {
-            font-size: 11px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
-        }
-
-        .tool-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-        }
-
-        /* Object List */
-        #object-list {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .obj-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 10px;
-            background: #0f172a;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            margin-bottom: 4px;
-            cursor: pointer;
-            border-left: 3px solid transparent;
-            transition: all 0.1s;
-            font-size: 12px;
-        }
-
-        .obj-item:hover {
-            border-color: #64748b;
-        }
-
-        .obj-item.selected {
-            border-left-color: var(--accent);
-            background: #1e293b;
-            border-color: #475569;
-        }
-
-        /* Properties Panel */
-        .prop-group {
-            background: #0f172a;
-            border-radius: 4px;
-            padding: 8px;
-            margin-bottom: 8px;
-            border: 1px solid #334155;
-        }
-
-        .prop-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
-            font-size: 12px;
-        }
-
-        .prop-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .prop-row label {
-            color: #cbd5e1;
-            min-width: 40px;
-            font-weight: 500;
-        }
-
-        input[type="number"],
-        input[type="text"] {
-            background: #020617;
-            border: 1px solid #475569;
-            color: white;
-            padding: 4px 6px;
-            border-radius: 3px;
-            flex: 1;
-            font-family: monospace;
-            font-size: 11px;
-        }
-
-        .matrix-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-            margin: 4px 0;
-        }
-
-        .matrix-val {
-            text-align: center;
-            background: #1e293b;
-            padding: 4px;
-            border-radius: 3px;
-            color: var(--accent);
-            font-family: monospace;
-            font-size: 11px;
-        }
-
-        /* Context Menu */
-        #context-menu {
-            position: absolute;
-            display: none;
-            background: #1e293b;
-            border: 1px solid #475569;
-            border-radius: 6px;
-            padding: 4px;
-            min-width: 120px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        .ctx-item {
-            padding: 6px 10px;
-            font-size: 12px;
-            color: #f1f5f9;
-            cursor: pointer;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .ctx-item:hover {
-            background: #334155;
-        }
-
-        .ctx-item.delete {
-            color: #ef4444;
-        }
-
-        .ctx-divider {
-            height: 1px;
-            background: #334155;
-            margin: 4px 0;
-        }
-
-        /* Overlays */
-        .overlay-controls {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.95);
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            pointer-events: auto;
-        }
-
-        .hint {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-            pointer-events: none;
-            text-shadow: 0 1px 3px black;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        /* Sliders */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100px;
-            background: transparent;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-            margin-top: -6px;
-        }
-
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: #475569;
-            border-radius: 2px;
-        }
-
-        .val-display {
-            font-family: monospace;
-            color: var(--accent);
-            font-size: 14px;
-            width: 40px;
-            text-align: center;
-        }
-
-        /* AI Chat UI */
-        #chat-container {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-            /* Let clicks pass through to canvas if not on chat */
-            z-index: 1000;
-        }
-
-        #chat-history {
-            height: 200px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            overflow-y: auto;
-            color: var(--text);
-            font-size: 12px;
-            pointer-events: auto;
-            backdrop-filter: blur(4px);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .msg-user {
-            align-self: flex-end;
-            background: var(--accent);
-            color: #0f172a;
-            padding: 6px 10px;
-            border-radius: 8px 8px 0 8px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-
-        .msg-ai {
-            align-self: flex-start;
-            background: #334155;
-            color: #f1f5f9;
-            padding: 6px 10px;
-            border-radius: 8px 8px 8px 0;
-            max-width: 90%;
-            word-wrap: break-word;
-        }
-
-        .msg-ai pre {
-            background: #0f172a;
-            padding: 5px;
-            border-radius: 4px;
-            overflow-x: auto;
-            margin: 5px 0 0 0;
-        }
-
-        #chat-input-area {
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            gap: 8px;
-            pointer-events: auto;
-        }
-
-        #chat-input {
-            flex: 1;
-            background: #020617;
-            border: 1px solid #475569;
-            color: white;
-            padding: 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            outline: none;
-        }
-
-        #chat-input:focus {
-            border-color: var(--accent);
-        }
-
-        #btn-send {
-            width: auto;
-            padding: 0 12px;
-            background: var(--accent);
-            color: #0f172a;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>几何线性代数实验室 (GeoLinAlg)</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--text:#f8fafc;--accent:#38bdf8;--border:#334155;--danger:#ef4444}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden;display:flex;height:100vh;user-select:none}
+#sidebar{width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:20;box-shadow:4px 0 15px rgba(0,0,0,0.3)}
+#main{flex:1;position:relative;cursor:crosshair}
+#canvas{display:block;width:100%;height:100%}
+.header{padding:15px;background:#0b1120;border-bottom:1px solid var(--border);font-weight:600;font-size:16px;display:flex;justify-content:space-between;align-items:center;color:var(--accent)}
+.content{flex:1;overflow-y:auto;padding:10px}
+button{background:#334155;color:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .1s;display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
+button:hover:not(:disabled){background:#475569;border-color:#64748b}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--accent);color:#0f172a;border-color:var(--accent);font-weight:700}
+button.secondary{background:transparent;border:1px dashed #64748b;color:#94a3b8}
+.section{margin-bottom:20px;border-bottom:1px solid #334155;padding-bottom:15px}
+.section-title{font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+.tool-grid{display:grid;grid-template-columns:1fr;gap:8px}
+#object-list{max-height:250px;overflow-y:auto}
+.obj-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#0f172a;border:1px solid var(--border);border-radius:4px;margin-bottom:4px;cursor:pointer;border-left:3px solid transparent;transition:all .1s;font-size:12px}
+.obj-item:hover{border-color:#64748b}
+.obj-item.selected{border-left-color:var(--accent);background:#1e293b;border-color:#475569}
+.prop-group{background:#0f172a;border-radius:4px;padding:8px;margin-bottom:8px;border:1px solid #334155}
+.prop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.prop-row:last-child{margin-bottom:0}
+.prop-row label{color:#cbd5e1;min-width:40px;font-weight:500}
+input[type=number],input[type=text]{background:#020617;border:1px solid #475569;color:#fff;padding:4px 6px;border-radius:3px;flex:1;font-family:monospace;font-size:11px}
+.matrix-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 0}
+.matrix-val{text-align:center;background:#1e293b;padding:4px;border-radius:3px;color:var(--accent);font-family:monospace;font-size:11px}
+#context-menu{position:absolute;display:none;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:4px;min-width:120px;box-shadow:0 4px 15px rgba(0,0,0,.5);z-index:1000}
+.ctx-item{padding:6px 10px;font-size:12px;color:#f1f5f9;cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:8px}
+.ctx-item:hover{background:#334155}
+.ctx-item.delete{color:#ef4444}
+.ctx-divider{height:1px;background:#334155;margin:4px 0}
+.overlay-controls{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);padding:12px 20px;border-radius:12px;border:1px solid var(--border);display:flex;gap:16px;align-items:center;backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:auto;max-width:90vw;overflow-x:auto}
+.hint{position:absolute;top:15px;left:15px;font-size:13px;color:rgba(255,255,255,.7);pointer-events:none;text-shadow:0 1px 3px #000;background:rgba(0,0,0,.5);padding:4px 8px;border-radius:4px}
+input[type=range]{-webkit-appearance:none;width:100px;background:transparent}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:var(--accent);cursor:pointer;margin-top:-6px}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#475569;border-radius:2px}
+.val-display{font-family:monospace;color:var(--accent);font-size:14px;width:40px;text-align:center}
+#chat-container{position:absolute;bottom:20px;right:20px;width:320px;display:flex;flex-direction:column;gap:10px;pointer-events:none;z-index:1000}
+#chat-history{height:200px;background:rgba(15,23,42,.9);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto;color:var(--text);font-size:12px;pointer-events:auto;backdrop-filter:blur(4px);display:flex;flex-direction:column;gap:8px}
+.msg-user{align-self:flex-end;background:var(--accent);color:#0f172a;padding:6px 10px;border-radius:8px 8px 0 8px;max-width:80%;word-wrap:break-word}
+.msg-ai{align-self:flex-start;background:#334155;color:#f1f5f9;padding:6px 10px;border-radius:8px 8px 8px 0;max-width:90%;word-wrap:break-word}
+.msg-ai pre{background:#0f172a;padding:5px;border-radius:4px;overflow-x:auto;margin:5px 0 0 0}
+#chat-input-area{background:rgba(15,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;gap:8px;pointer-events:auto}
+#chat-input{flex:1;background:#020617;border:1px solid #475569;color:#fff;padding:6px;border-radius:4px;font-size:12px;outline:none}
+#chat-input:focus{border-color:var(--accent)}
+#btn-send{width:auto;padding:0 12px;background:var(--accent);color:#0f172a;font-weight:bold}
+.typing{align-self:flex-start;display:flex;gap:4px;background:#334155;color:#f1f5f9;padding:6px 10px;border-radius:8px 8px 8px 0;max-width:90%;word-wrap:break-word}
+.typing .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:dotPulse 1s infinite ease-in-out}
+.typing .dot:nth-child(2){animation-delay:.15s}
+.typing .dot:nth-child(3){animation-delay:.3s}
+@keyframes dotPulse{0%,80%,100%{transform:scale(0);opacity:.5}40%{transform:scale(1);opacity:1}}
+</style>
 </head>
-
 <body>
+<div id="context-menu">
+    <div class="ctx-item delete" onclick="actions.deleteSelected()">🗑️ 删除对象</div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" onclick="app.resetView()">👁️ 重置视图</div>
+    <div class="ctx-item" onclick="app.reset()">🧹 清空画布</div>
+</div>
 
-    <!-- Context Menu -->
-    <div id="context-menu">
-        <div class="ctx-item delete" onclick="actions.deleteSelected()">🗑️ 删除对象</div>
-        <div class="ctx-divider"></div>
-        <div class="ctx-item" onclick="app.resetView()">👁️ 重置视图</div>
-        <div class="ctx-item" onclick="app.reset()">🧹 清空画布</div>
+<div id="sidebar">
+    <div class="header">
+        <span>🔢 GeoLinAlg</span>
+        <button onclick="app.reset()" class="secondary" style="width:auto;padding:4px 8px;font-size:10px;">清空</button>
     </div>
-
-    <div id="sidebar">
-        <div class="header">
-            <span>🔢 GeoLinAlg</span>
-            <button onclick="app.reset()" class="secondary"
-                style="width:auto; padding:4px 8px; font-size:10px;">清空</button>
+    <div class="content">
+        <div class="section">
+            <div class="section-title">工具箱 (选中对象以激活)</div>
+            <div class="tool-grid">
+                <button id="btn-create-vec" onclick="actions.createVector()" disabled>➜ 创建向量 (选2点)</button>
+                <button id="btn-create-mat" onclick="actions.createMatrix()" disabled>▦ 创建矩阵 (选2向量)</button>
+                <button id="btn-lin-comb" onclick="actions.createLinComb()" disabled>∑ 线性组合 (选2+向量)</button>
+                <button id="btn-create-eigen" onclick="actions.createEigen()" disabled>λ 显示特征系 (选1矩阵)</button>
+                <button id="btn-apply-trans" onclick="actions.applyTransform()" disabled>⚡ 应用变换 (选1矩阵+1向量)</button>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:#64748b;line-height:1.4;">
+                <b>操作指南:</b><br>
+                • 左键空白: 创建点（靠近整数时自动吸附，Alt 取消吸附）<br>
+                • 左键对象: 选择 (按住Ctrl多选)<br>
+                • 拖动点: 移动（靠近整数时自动吸附，Alt 取消吸附）<br>
+                • 中键拖动: 平移画布<br>
+                • 右键对象: 弹出菜单
+            </div>
         </div>
-
-        <div class="content">
-            <div class="section">
-                <div class="section-title">工具箱 (选中对象以激活)</div>
-                <div class="tool-grid">
-                    <button id="btn-create-vec" onclick="actions.createVector()" disabled>➜ 创建向量 (选2点)</button>
-                    <button id="btn-create-mat" onclick="actions.createMatrix()" disabled>▦ 创建矩阵 (选2向量)</button>
-                    <button id="btn-lin-comb" onclick="actions.createLinComb()" disabled>∑ 线性组合 (选2向量)</button>
-                    <button id="btn-apply-trans" onclick="actions.applyTransform()" disabled>⚡ 应用变换 (选1矩阵+1向量)</button>
-                </div>
-                <div style="margin-top:10px; font-size: 11px; color: #64748b; line-height: 1.4;">
-                    <b>操作指南:</b><br>
-                    • 左键空白: 创建点<br>
-                    • 左键对象: 选择 (按住Ctrl多选)<br>
-                    • 拖动点: 移动 (所有依赖自动更新)<br>
-                    • 中键拖动: 平移画布<br>
-                    • 右键对象: 弹出菜单
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">属性</div>
-                <div id="properties-panel"></div>
-            </div>
-
-            <div class="section" style="border:none;">
-                <div class="section-title">对象列表</div>
-                <div id="object-list"></div>
-            </div>
+        <div class="section">
+            <div class="section-title">属性</div>
+            <div id="properties-panel"></div>
+        </div>
+        <div class="section" style="border:none;">
+            <div class="section-title">对象列表</div>
+            <div id="object-list"></div>
         </div>
     </div>
+</div>
 
-    <div id="main">
-        <div class="hint">左键: 创建/选择/拖动 | 中键: 平移 | 右键: 菜单</div>
-        <canvas id="canvas"></canvas>
+<div id="main">
+    <div class="hint">左键: 创建/选择/拖动 | 中键: 平移 | 右键: 菜单 | 靠近整数自动吸附 (阈值 0.25) | Alt 取消吸附</div>
+    <canvas id="canvas"></canvas>
+    <div class="overlay-controls" id="comb-controls" style="display:none;"></div>
 
-        <!-- Controls for Linear Combination -->
-        <div class="overlay-controls" id="comb-controls" style="display:none;">
-            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
-                <span style="font-size:10px; color:#94a3b8; font-weight:bold;">a</span>
-                <div class="val-display" id="val-a">1.0</div>
-            </div>
-            <input type="range" min="-3" max="3" step="0.1" value="1" id="slider-a">
-            <div style="width:1px; height:30px; background:#475569;"></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
-                <span style="font-size:10px; color:#94a3b8; font-weight:bold;">b</span>
-                <div class="val-display" id="val-b">1.0</div>
-            </div>
-            <input type="range" min="-3" max="3" step="0.1" value="1" id="slider-b">
+    <!-- AI Chat -->
+    <div id="chat-container">
+        <div id="chat-history">
+            <div class="msg-ai">你好！我是你的线性代数 AI 助教。你可以让我演示矩阵变换，或者出 Lean 练习题。</div>
         </div>
-
-        <!-- AI Chat Interface -->
-        <div id="chat-container">
-            <div id="chat-history">
-                <div class="msg-ai">你好！我是你的线性代数 AI 助教。你可以让我演示矩阵变换，或者出 Lean 练习题。</div>
-            </div>
-            <div id="chat-input-area">
-                <input type="text" id="chat-input" placeholder="输入指令 (例如: 展示旋转矩阵)..."
-                    onkeydown="if(event.key==='Enter') sendChat()">
-                <button id="btn-send" onclick="sendChat()">发送</button>
-            </div>
+        <div id="chat-input-area">
+            <input type="text" id="chat-input" placeholder="输入指令 (例如: 展示旋转矩阵)..." onkeydown="if(event.key==='Enter') sendChat()">
+            <button id="btn-send" onclick="sendChat()">发送</button>
         </div>
     </div>
-
-    <script>
-        // --- Math Library ---
-        const MathLib = {
-            add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }),
-            sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y }),
-            scale: (v, s) => ({ x: v.x * s, y: v.y * s }),
-            len: v => Math.hypot(v.x, v.y),
-            det: (v1, v2) => v1.x * v2.y - v1.y * v2.x,
-            transform: (v, col1, col2) => ({
-                x: col1.x * v.x + col2.x * v.y,
-                y: col1.y * v.x + col2.y * v.y
-            }),
-            solveEigen: (col1, col2) => {
-                const a = col1.x, b = col2.x, c = col1.y, d = col2.y;
-                const tr = a + d;
-                const det = a * d - b * c;
-                const delta = tr * tr - 4 * det;
-
-                if (delta < -1e-9) return [];
-
-                const l1 = (tr + Math.sqrt(Math.max(0, delta))) / 2;
-                const l2 = (tr - Math.sqrt(Math.max(0, delta))) / 2;
-
-                const getEigenvector = (lambda) => {
-                    if (Math.abs(b) > 1e-5) return { x: b, y: lambda - a };
-                    if (Math.abs(c) > 1e-5) return { x: lambda - d, y: c };
-                    if (Math.abs(a - lambda) > 1e-5) return { x: 0, y: 1 };
-                    return { x: 1, y: 0 };
-                };
-                const normalize = v => {
-                    const l = Math.hypot(v.x, v.y);
-                    return l < 1e-9 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
-                };
-
-                const results = [{ val: l1, vec: normalize(getEigenvector(l1)) }];
-                if (Math.abs(delta) > 1e-5) results.push({ val: l2, vec: normalize(getEigenvector(l2)) });
-                return results;
-            }
-        };
-
-        // --- Scene Objects ---
-        let OBJ_ID = 1;
-        const genId = () => `obj_${OBJ_ID++}`;
-
-        class SceneObject {
-            constructor(type) {
-                this.id = genId(); this.type = type; this.selected = false; this.deps = []; this.label = "";
-            }
-            update() { }
-            render(ctx, view) { }
-            hitTest(wPos) { return false; }
-            getZIndex() { return 0; }
-        }
-
-        class Point extends SceneObject {
-            constructor(x, y) { super('point'); this.pos = { x, y }; this.label = `P${OBJ_ID - 1}`; }
-            getZIndex() { return 10; }
-            render(ctx, view) {
-                const s = view.toScreen(this.pos);
-                ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);
-                ctx.fillStyle = this.selected ? '#eab308' : '#38bdf8';
-                ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.fillText(this.label, s.x + 8, s.y - 8);
-            }
-            hitTest(wPos) { return MathLib.len(MathLib.sub(this.pos, wPos)) < 0.8; }
-        }
-
-        class Vector extends SceneObject {
-            constructor(pStart, pEnd) { super('vector'); this.deps = [pStart, pEnd]; this.label = `v${OBJ_ID - 1}`; this.color = `hsl(${Math.random() * 360}, 70%, 60%)`; this.update(); }
-            getZIndex() { return 5; }
-            update() {
-                if (!this.deps[0] || !this.deps[1]) return;
-                this.origin = this.deps[0].pos;
-                this.vec = MathLib.sub(this.deps[1].pos, this.origin);
-                this.len = MathLib.len(this.vec);
-            }
-            render(ctx, view) {
-                const start = view.toScreen(this.origin);
-                const end = view.toScreen(MathLib.add(this.origin, this.vec));
-                ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y);
-                ctx.strokeStyle = this.selected ? '#eab308' : this.color; ctx.lineWidth = 3; ctx.stroke();
-                drawArrowHead(ctx, start, end, ctx.strokeStyle);
-                const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-                ctx.fillStyle = this.color; ctx.font = 'bold 12px sans-serif'; ctx.fillText(`${this.label} (${this.len.toFixed(1)})`, mid.x + 5, mid.y - 5);
-            }
-            hitTest(wPos) {
-                const p1 = this.origin, p2 = MathLib.add(this.origin, this.vec);
-                const l2 = Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
-                if (l2 == 0) return false;
-                const t = Math.max(0, Math.min(1, ((wPos.x - p1.x) * (p2.x - p1.x) + (wPos.y - p1.y) * (p2.y - p1.y)) / l2));
-                const proj = { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
-                return MathLib.len(MathLib.sub(wPos, proj)) < 0.4;
-            }
-        }
-
-        class Matrix extends SceneObject {
-            constructor(v1, v2) { super('matrix'); this.deps = [v1, v2]; this.label = `M${OBJ_ID - 1}`; this.update(); }
-            getZIndex() { return 1; }
-            update() {
-                if (!this.deps[0] || !this.deps[1]) return;
-                this.c1 = this.deps[0].vec; this.c2 = this.deps[1].vec; this.origin = this.deps[0].origin;
-                this.det = MathLib.det(this.c1, this.c2); this.area = Math.abs(this.det);
-                this.eigen = MathLib.solveEigen(this.c1, this.c2);
-            }
-            render(ctx, view) {
-                const o = view.toScreen(this.origin);
-                const p1 = view.toScreen(MathLib.add(this.origin, this.c1));
-                const p2 = view.toScreen(MathLib.add(this.origin, this.c2));
-                const pSum = view.toScreen(MathLib.add(this.origin, MathLib.add(this.c1, this.c2)));
-
-                // Matrix Body
-                ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(pSum.x, pSum.y); ctx.lineTo(p2.x, p2.y); ctx.closePath();
-                ctx.fillStyle = this.selected ? 'rgba(234, 179, 8, 0.3)' : 'rgba(124, 58, 237, 0.2)'; ctx.fill();
-                ctx.strokeStyle = this.selected ? '#eab308' : 'rgba(124, 58, 237, 0.5)'; ctx.lineWidth = 1; ctx.stroke();
-                ctx.fillStyle = '#ddd6fe'; ctx.font = '11px sans-serif'; ctx.fillText(`Area: ${this.area.toFixed(1)}`, pSum.x + 5, pSum.y);
-
-                // Eigen Vectors
-                if (this.eigen.length > 0) {
-                    this.eigen.forEach((e, idx) => {
-                        const color = idx === 0 ? '#4ade80' : '#fb923c';
-                        const end = view.toScreen(MathLib.add(this.origin, MathLib.scale(e.vec, e.val)));
-                        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(end.x, end.y);
-                        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash([5, 3]); ctx.stroke(); ctx.setLineDash([]);
-                        drawArrowHead(ctx, o, end, color);
-
-                        // Show Lambda
-                        ctx.fillStyle = color; ctx.font = '11px sans-serif';
-                        ctx.fillText(`λ=${e.val.toFixed(2)}`, end.x, end.y - 12);
-                    });
-
-                    // Eigen Parallelogram (if 2 eigen vectors)
-                    if (this.eigen.length === 2) {
-                        const ev1 = MathLib.scale(this.eigen[0].vec, this.eigen[0].val);
-                        const ev2 = MathLib.scale(this.eigen[1].vec, this.eigen[1].val);
-                        const ep1 = view.toScreen(MathLib.add(this.origin, ev1));
-                        const ep2 = view.toScreen(MathLib.add(this.origin, ev2));
-                        const eSum = view.toScreen(MathLib.add(this.origin, MathLib.add(ev1, ev2)));
-
-                        ctx.beginPath();
-                        ctx.moveTo(o.x, o.y); ctx.lineTo(ep1.x, ep1.y); ctx.lineTo(eSum.x, eSum.y); ctx.lineTo(ep2.x, ep2.y);
-                        ctx.closePath();
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
-
-                        const eArea = Math.abs(MathLib.det(ev1, ev2));
-                        ctx.fillStyle = '#fff'; ctx.fillText(`EigArea: ${eArea.toFixed(1)}`, eSum.x, eSum.y + 12);
-                    }
-                }
-            }
-            hitTest(wPos) {
-                const center = MathLib.add(this.origin, MathLib.scale(MathLib.add(this.c1, this.c2), 0.5));
-                return MathLib.len(MathLib.sub(wPos, center)) < 1.2;
-            }
-        }
-
-        class TransformedVector extends SceneObject {
-            constructor(mat, vec) { super('trans_vec'); this.deps = [mat, vec]; this.label = vec.label + "'"; this.color = vec.color; this.update(); }
-            getZIndex() { return 3; }
-            update() {
-                if (!this.deps[0] || !this.deps[1]) return;
-                this.origin = this.deps[1].origin;
-                const originalVec = this.deps[1].vec;
-                this.originalLen = MathLib.len(originalVec);
-                this.vec = MathLib.transform(originalVec, this.deps[0].c1, this.deps[0].c2);
-                this.len = MathLib.len(this.vec);
-                this.scaleRatio = this.originalLen > 0.001 ? (this.len / this.originalLen).toFixed(2) : "∞";
-            }
-            render(ctx, view) {
-                const s = view.toScreen(this.origin);
-                const e = view.toScreen(MathLib.add(this.origin, this.vec));
-                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y);
-                ctx.strokeStyle = this.selected ? '#eab308' : this.color; ctx.lineWidth = 3; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]);
-                drawArrowHead(ctx, s, e, ctx.strokeStyle);
-
-                ctx.fillStyle = this.color;
-                ctx.font = '11px sans-serif';
-                const labelText = `${this.label} (L=${this.len.toFixed(1)}, Scale=${this.scaleRatio})`;
-                ctx.fillText(labelText, e.x + 8, e.y);
-            }
-            hitTest(wPos) {
-                const end = MathLib.add(this.origin, this.vec);
-                // Only checking near end for simplified selection of overlapping vectors
-                return MathLib.len(MathLib.sub(wPos, end)) < 0.5;
-            }
-        }
-
-        class LinearComb extends SceneObject {
-            constructor(v1, v2) { super('lin_comb'); this.deps = [v1, v2]; this.a = 1.0; this.b = 1.0; this.update(); }
-            getZIndex() { return 4; }
-            update() {
-                if (!this.deps[0] || !this.deps[1]) return;
-                this.vec = MathLib.add(MathLib.scale(this.deps[0].vec, this.a), MathLib.scale(this.deps[1].vec, this.b));
-                this.origin = this.deps[0].origin;
-            }
-            render(ctx, view) {
-                const s = view.toScreen(this.origin);
-                const e = view.toScreen(MathLib.add(this.origin, this.vec));
-                const p1 = view.toScreen(MathLib.add(this.origin, MathLib.scale(this.deps[0].vec, this.a)));
-
-                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(e.x, e.y);
-                ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.setLineDash([2, 2]); ctx.stroke(); ctx.setLineDash([]);
-
-                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y);
-                ctx.strokeStyle = this.selected ? '#eab308' : '#22d3ee'; ctx.lineWidth = 3; ctx.stroke();
-                drawArrowHead(ctx, s, e, ctx.strokeStyle);
-            }
-            hitTest(wPos) { const end = MathLib.add(this.origin, this.vec); return MathLib.len(MathLib.sub(wPos, end)) < 0.5; }
-        }
-
-        function drawArrowHead(ctx, start, end, color) {
-            const angle = Math.atan2(end.y - start.y, end.x - start.x);
-            ctx.beginPath();
-            ctx.moveTo(end.x, end.y);
-            ctx.lineTo(end.x - 10 * Math.cos(angle - Math.PI / 6), end.y - 10 * Math.sin(angle - Math.PI / 6));
-            ctx.lineTo(end.x - 10 * Math.cos(angle + Math.PI / 6), end.y - 10 * Math.sin(angle + Math.PI / 6));
-            ctx.fillStyle = color; ctx.fill();
-        }
-
-        // --- App State ---
-        const app = {
-            objects: [], selection: [], view: { cx: 0, cy: 0, zoom: 40 },
-
-            add(obj) { this.objects.push(obj); this.render(); this.updateUI(); },
-            reset() { this.objects = []; this.selection = []; OBJ_ID = 1; this.updateUI(); this.render(); },
-            resetView() { this.view = { cx: 0, cy: 0, zoom: 40 }; this.render(); },
-
-            select(obj, multi) {
-                if (!multi) this.selection = [];
-                if (obj && !this.selection.includes(obj)) this.selection.push(obj);
-                this.objects.forEach(o => o.selected = this.selection.includes(o));
-                this.updateUI(); this.render();
-            },
-
-            remove(obj) {
-                const toRemove = [obj]; let changed = true;
-                while (changed) {
-                    changed = false;
-                    this.objects.forEach(o => {
-                        if (!toRemove.includes(o) && o.deps.some(d => toRemove.includes(d))) { toRemove.push(o); changed = true; }
-                    });
-                }
-                this.objects = this.objects.filter(o => !toRemove.includes(o));
-                this.selection = this.selection.filter(o => !toRemove.includes(o));
-                this.updateUI(); this.render();
-            },
-
-            updateUI() {
-                // Object List
-                document.getElementById('object-list').innerHTML = this.objects.map(o => `
-            <div class="obj-item ${o.selected ? 'selected' : ''}" onclick="app.clickList('${o.id}', event)">
-                <span>${o.label} <span style="color:#64748b;font-size:10px">(${o.type})</span></span>
-            </div>
-        `).join('');
-
-                // Buttons
-                const sel = this.selection; const types = sel.map(o => o.type);
-                document.getElementById('btn-create-vec').disabled = !(sel.length === 2 && types.every(t => t === 'point'));
-                document.getElementById('btn-create-mat').disabled = !(sel.length === 2 && types.every(t => t === 'vector'));
-                document.getElementById('btn-lin-comb').disabled = !(sel.length === 2 && types.every(t => t === 'vector'));
-                document.getElementById('btn-apply-trans').disabled = !(sel.length === 2 && types.includes('matrix') && types.includes('vector'));
-
-                // Property Panel
-                const pPanel = document.getElementById('properties-panel');
-                if (sel.length === 1) {
-                    const o = sel[0];
-                    let html = `<div style="margin-bottom:8px;font-weight:bold;color:var(--accent)">${o.label} <span style="font-size:11px;color:#64748b">(${o.type})</span></div>`;
-
-                    if (o.type === 'point') {
-                        html += `
-                <div class="prop-group">
-                    <div class="prop-row"><label>X</label><input type="number" step="0.1" value="${o.pos.x.toFixed(2)}" onchange="actions.movePoint('${o.id}', this.value, null)"></div>
-                    <div class="prop-row"><label>Y</label><input type="number" step="0.1" value="${o.pos.y.toFixed(2)}" onchange="actions.movePoint('${o.id}', null, this.value)"></div>
-                </div>`;
-                    } else if (o.type === 'vector' || o.type === 'trans_vec') {
-                        html += `<div class="prop-group"><div class="prop-row"><label>Len</label><input disabled value="${o.len.toFixed(2)}"></div>`;
-                        if (o.type === 'trans_vec') {
-                            html += `<div class="prop-row"><label>Scale</label><input disabled value="${o.scaleRatio}"></div>`;
-                        }
-                        html += `</div>`;
-                    } else if (o.type === 'matrix') {
-                        html += `
-                <div class="prop-group">
-                    <div style="font-size:10px;color:#94a3b8;margin-bottom:4px">矩阵值</div>
-                    <div class="matrix-grid">
-                        <div class="matrix-val">${o.c1.x.toFixed(1)}</div><div class="matrix-val">${o.c2.x.toFixed(1)}</div>
-                        <div class="matrix-val">${o.c1.y.toFixed(1)}</div><div class="matrix-val">${o.c2.y.toFixed(1)}</div>
-                    </div>
-                    <div class="prop-row"><label>Det</label><input disabled value="${o.det.toFixed(2)}"></div>
-                </div>
-                <div class="prop-group">
-                     <div style="font-size:10px;color:#94a3b8;margin-bottom:4px">特征系统</div>
-                     ${o.eigen.map((e, i) => `
-                        <div style="margin-bottom:6px;border-top:1px solid #334155;padding-top:4px">
-                            <div class="prop-row"><span style="color:${i == 0 ? '#4ade80' : '#fb923c'}">λ${i + 1}</span> <span>= ${e.val.toFixed(2)}</span></div>
-                            <div class="prop-row" style="color:#94a3b8;font-size:10px">v: [${e.vec.x.toFixed(2)}, ${e.vec.y.toFixed(2)}]</div>
-                        </div>
-                     `).join('') || '<div style="color:#64748b;font-size:11px">无实特征值</div>'}
-                </div>`;
-                    }
-                    pPanel.innerHTML = html;
-                } else {
-                    pPanel.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center">未选择对象</div>';
-                }
-
-                // Comb Controls
-                const combObj = sel.find(o => o.type === 'lin_comb') || this.objects.find(o => o.type === 'lin_comb');
-                const cCtrl = document.getElementById('comb-controls');
-                if (combObj && sel.includes(combObj)) {
-                    cCtrl.style.display = 'flex';
-                    document.getElementById('slider-a').value = combObj.a; document.getElementById('slider-b').value = combObj.b;
-                    document.getElementById('val-a').innerText = combObj.a.toFixed(1); document.getElementById('val-b').innerText = combObj.b.toFixed(1);
-                    cCtrl.oninput = (e) => {
-                        if (e.target.id === 'slider-a') combObj.a = parseFloat(e.target.value);
-                        if (e.target.id === 'slider-b') combObj.b = parseFloat(e.target.value);
-                        app.updateUI(); app.render();
-                    };
-                } else { cCtrl.style.display = 'none'; }
-            },
-
-            clickList(id, e) { const o = this.objects.find(x => x.id === id); this.select(o, e.ctrlKey); },
-
-            render() {
-                const ctx = canvas.getContext('2d'); const { width, height } = canvas; ctx.clearRect(0, 0, width, height);
-                const view = {
-                    toScreen: (p) => ({ x: width / 2 + (p.x - this.view.cx) * this.view.zoom, y: height / 2 - (p.y - this.view.cy) * this.view.zoom }),
-                    toWorld: (s) => ({ x: this.view.cx + (s.x - width / 2) / this.view.zoom, y: this.view.cy - (s.y - height / 2) / this.view.zoom })
-                };
-                drawGrid(ctx, view, width, height);
-                [...this.objects].sort((a, b) => a.getZIndex() - b.getZIndex()).forEach(o => { o.update(); o.render(ctx, view); });
-            }
-        };
-
-        const actions = {
-            createVector: () => { app.add(new Vector(app.selection[0], app.selection[1])); },
-            createMatrix: () => { app.add(new Matrix(app.selection[0], app.selection[1])); },
-            createLinComb: () => { app.add(new LinearComb(app.selection[0], app.selection[1])); },
-            applyTransform: () => { const m = app.selection.find(o => o.type === 'matrix'); const v = app.selection.find(o => o.type === 'vector'); app.add(new TransformedVector(m, v)); },
-            movePoint: (id, x, y) => { const p = app.objects.find(o => o.id === id); if (p) { if (x !== null) p.pos.x = parseFloat(x); if (y !== null) p.pos.y = parseFloat(y); app.render(); } },
-            deleteSelected: () => { const sel = [...app.selection]; sel.forEach(o => app.remove(o)); hideCtxMenu(); }
-        };
-
-        function drawGrid(ctx, view, w, h) {
-            ctx.lineWidth = 1; ctx.strokeStyle = '#334155'; ctx.globalAlpha = 0.4;
-            const tl = view.toWorld({ x: 0, y: 0 }); const br = view.toWorld({ x: w, y: h });
-            ctx.beginPath();
-            for (let x = Math.floor(tl.x); x <= Math.ceil(br.x); x++) { const p = view.toScreen({ x, y: 0 }); ctx.moveTo(p.x, 0); ctx.lineTo(p.x, h); }
-            for (let y = Math.floor(br.y); y <= Math.ceil(tl.y); y++) { const p = view.toScreen({ x: 0, y }); ctx.moveTo(0, p.y); ctx.lineTo(w, p.y); }
-            ctx.stroke(); ctx.globalAlpha = 1;
-            const o = view.toScreen({ x: 0, y: 0 });
-            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(w, o.y); ctx.moveTo(o.x, 0); ctx.lineTo(o.x, h); ctx.stroke();
-        }
-
-        // --- Interaction Logic ---
-        const canvas = document.getElementById('canvas'); const ctxMenu = document.getElementById('context-menu');
-        let dragging = null, isPanning = false, lastPos = { x: 0, y: 0 };
-
-        function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; app.render(); }
-        window.addEventListener('resize', resize); setTimeout(resize, 0);
-        window.addEventListener('click', hideCtxMenu);
-        function hideCtxMenu() { ctxMenu.style.display = 'none'; }
-
-        canvas.addEventListener('mousedown', e => {
-            hideCtxMenu(); const rect = canvas.getBoundingClientRect(); const m = { x: e.clientX - rect.left, y: e.clientY - rect.top }; lastPos = m;
-            if (e.button === 1) { isPanning = true; e.preventDefault(); return; }
-            if (e.button === 2) return;
-
-            const view = app.view; const w = { x: view.cx + (m.x - canvas.width / 2) / view.zoom, y: view.cy - (m.y - canvas.height / 2) / view.zoom };
-            const hitList = [...app.objects].sort((a, b) => b.getZIndex() - a.getZIndex());
-            const hit = hitList.find(o => o.hitTest(w));
-
-            if (hit) { app.select(hit, e.ctrlKey); if (hit.type === 'point') dragging = hit; }
-            else { const sx = Math.round(w.x * 2) / 2; const sy = Math.round(w.y * 2) / 2; app.add(new Point(sx, sy)); }
-        });
-
-        canvas.addEventListener('mousemove', e => {
-            const rect = canvas.getBoundingClientRect(); const m = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-            if (isPanning) { app.view.cx -= (m.x - lastPos.x) / app.view.zoom; app.view.cy += (m.y - lastPos.y) / app.view.zoom; lastPos = m; app.render(); return; }
-            if (dragging) {
-                const view = app.view; const w = { x: view.cx + (m.x - canvas.width / 2) / view.zoom, y: view.cy - (m.y - canvas.height / 2) / view.zoom };
-                if (!e.altKey) { w.x = Math.round(w.x * 2) / 2; w.y = Math.round(w.y * 2) / 2; }
-                dragging.pos = w; app.updateUI(); app.render();
-            }
-        });
-
-        canvas.addEventListener('mouseup', () => { isPanning = false; dragging = null; });
-        canvas.addEventListener('contextmenu', e => {
-            e.preventDefault(); const rect = canvas.getBoundingClientRect(); const m = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-            const view = app.view; const w = { x: view.cx + (m.x - canvas.width / 2) / view.zoom, y: view.cy - (m.y - canvas.height / 2) / view.zoom };
-            const hitList = [...app.objects].sort((a, b) => b.getZIndex() - a.getZIndex());
-            const hit = hitList.find(o => o.hitTest(w));
-            if (hit) app.select(hit); else app.select(null);
-            ctxMenu.style.display = 'block'; ctxMenu.style.left = e.clientX + 'px'; ctxMenu.style.top = e.clientY + 'px';
-        });
-
-        canvas.addEventListener('wheel', e => { e.preventDefault(); const s = e.deltaY > 0 ? 0.9 : 1.1; app.view.zoom = Math.max(5, Math.min(200, app.view.zoom * s)); app.render(); }, { passive: false });
-
-        // Demo
-        (function () {
-            const p1 = new Point(0, 0); const p2 = new Point(3, 0); const p3 = new Point(1, 2);
-            app.add(p1); app.add(p2); app.add(p3);
-            const v1 = new Vector(p1, p2); const v2 = new Vector(p1, p3);
-            app.add(v1); app.add(v2); app.add(new Matrix(v1, v2));
-        })();
-
-        // --- AI Integration ---
-        const AIBridge = {
-            handleResponse(data) {
-                console.log("🤖 AI 指令:", data);
-                addMessage(data.explanation, 'ai', data.lean);
-
-                switch (data.operation) {
-                    case 'vector_add':
-                    case 'lin_comb':
-                        this.drawLinComb(data.inputs);
-                        break;
-                    case 'mat_mul':
-                        this.drawMatMul(data.inputs);
-                        break;
-                    case 'eigen':
-                        this.drawEigen(data.inputs);
-                        break;
-                    case 'lean_statement':
-                    case 'lean_intro':
-                        // 内容已经在 addMessage 处理了
-                        break;
-                    default:
-                        console.warn("未知的操作:", data.operation);
-                }
-            },
-
-            drawLinComb(inputs) {
-                app.reset();
-                const vecs = inputs.vectors || [[1, 0], [0, 1]];
-                const s = 40; // Scale factor for visualization if inputs are small
-
-                const p0 = new Point(0, 0); app.add(p0);
-                const p1 = new Point(vecs[0][0], vecs[0][1]); app.add(p1);
-                const p2 = new Point(vecs[1][0], vecs[1][1]); app.add(p2);
-
-                const v1 = new Vector(p0, p1); app.add(v1);
-                const v2 = new Vector(p0, p2); app.add(v2);
-
-                const comb = new LinearComb(v1, v2); app.add(comb);
-                app.select(comb);
-            },
-
-            drawMatMul(inputs) {
-                app.reset();
-                const mVal = inputs.matrix || [[1, 0], [0, 1]];
-
-                const p0 = new Point(0, 0); app.add(p0);
-                const pCol1 = new Point(mVal[0][0], mVal[1][0]); app.add(pCol1);
-                const pCol2 = new Point(mVal[0][1], mVal[1][1]); app.add(pCol2);
-
-                const vCol1 = new Vector(p0, pCol1); app.add(vCol1);
-                const vCol2 = new Vector(p0, pCol2); app.add(vCol2);
-
-                const matrix = new Matrix(vCol1, vCol2); app.add(matrix);
-
-                // Add a test vector to show transformation
-                const pTest = new Point(1, 1); app.add(pTest);
-                const vTest = new Vector(p0, pTest); app.add(vTest);
-                const vTrans = new TransformedVector(matrix, vTest); app.add(vTrans);
-
-                app.select(matrix);
-            },
-
-            drawEigen(inputs) {
-                this.drawMatMul(inputs);
-                // The Matrix class automatically renders eigenvectors
-            }
-        };
-
-        async function sendChat() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            addMessage(msg, 'user');
-            input.value = '';
-            input.disabled = true;
-
-            try {
-                const res = await fetch('http://127.0.0.1:5000/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
-                });
-                const data = await res.json();
-
-                if (data.error) {
-                    addMessage(`Error: ${data.error}`, 'ai');
-                } else {
-                    AIBridge.handleResponse(data);
-                }
-            } catch (e) {
-                addMessage(`Server Error: ${e.message}. Is backend running?`, 'ai');
-            } finally {
-                input.disabled = false;
-                input.focus();
-            }
-        }
-
-        function addMessage(text, role, leanData) {
-            const history = document.getElementById('chat-history');
-            const div = document.createElement('div');
-            div.className = `msg-${role}`;
-
-            let html = text;
-            if (leanData) {
-                html += `<div style="margin-top:8px; border-top:1px solid #475569; padding-top:4px;">
-                    <div style="font-weight:bold; color:#fb923c; font-size:11px;">${leanData.statement_cn || 'Lean 定理'}</div>`;
-                if (leanData.lean_code) {
-                    html += `<pre>${leanData.lean_code}</pre>`;
-                }
-                if (leanData.hint) {
-                    html += `<div style="color:#94a3b8; font-style:italic; font-size:11px; margin-top:4px;">💡 ${leanData.hint}</div>`;
-                }
-                html += `</div>`;
-            }
-            div.innerHTML = html;
-
-            history.appendChild(div);
-            history.scrollTop = history.scrollHeight;
-        }
-    </script>
+</div>
+
+<script>
+/* --- Config (snap only near integers) --- */
+const SNAP_STEP=1;
+const SNAP_THRESH=0.25;
+const snapIfNear=v=>{const n=Math.round(v/SNAP_STEP)*SNAP_STEP;return Math.abs(v-n)<=SNAP_THRESH?n:v;};
+
+/* --- Math Library --- */
+const MathLib={add:(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub:(a,b)=>({x:a.x-b.x,y:a.y-b.y}),scale:(v,s)=>({x:v.x*s,y:v.y*s}),len:v=>Math.hypot(v.x,v.y),det:(v1,v2)=>v1.x*v2.y-v1.y*v2.x,transform:(v,c1,c2)=>({x:c1.x*v.x+c2.x*v.y,y:c1.y*v.x+c2.y*v.y}),solveEigen:(c1,c2)=>{const a=c1.x,b=c2.x,c=c1.y,d=c2.y,tr=a+d,det=a*d-b*c,delta=tr*tr-4*det;if(delta<-1e-9)return[];const l1=(tr+Math.sqrt(Math.max(0,delta)))/2,l2=(tr-Math.sqrt(Math.max(0,delta)))/2;const getEv=l=>{if(Math.abs(b)>1e-5)return{x:b,y:l-a};if(Math.abs(c)>1e-5)return{x:l-d,y:c};if(Math.abs(a-l)>1e-5)return{x:0,y:1};return{x:1,y:0}};const norm=v=>{const l=Math.hypot(v.x,v.y);return l<1e-9?{x:0,y:0}:{x:v.x/l,y:v.y/l}};const res=[{val:l1,vec:norm(getEv(l1))}];if(Math.abs(delta)>1e-5)res.push({val:l2,vec:norm(getEv(l2))});return res}};
+/* --- Scene Objects --- */
+let OBJ_ID=1;const genId=()=>`obj_${OBJ_ID++}`;
+class SceneObject{constructor(t){this.id=genId();this.type=t;this.selected=false;this.deps=[];this.label=""}update(){}render(){}hitTest(){return false}getZIndex(){return 0}}
+class Point extends SceneObject{constructor(x,y){super("point");this.pos={x,y};this.label=`P${OBJ_ID-1}`}getZIndex(){return 10}render(ctx,view){const s=view.toScreen(this.pos);ctx.beginPath();ctx.arc(s.x,s.y,6,0,Math.PI*2);ctx.fillStyle=this.selected?"#eab308":"#38bdf8";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#94a3b8";ctx.font="10px monospace";ctx.fillText(this.label,s.x+8,s.y-8)}hitTest(wPos){return MathLib.len(MathLib.sub(this.pos,wPos))<.8}}
+class Vector extends SceneObject{constructor(pStart,pEnd){super("vector");this.deps=[pStart,pEnd];this.label=`v${OBJ_ID-1}`;this.color=`hsl(${Math.random()*360},70%,60%)`;this.update()}getZIndex(){return 5}update(){if(!this.deps[0]||!this.deps[1])return;this.origin=this.deps[0].pos;this.vec=MathLib.sub(this.deps[1].pos,this.origin);this.len=MathLib.len(this.vec)}render(ctx,view){const start=view.toScreen(this.origin),end=view.toScreen(MathLib.add(this.origin,this.vec));ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.strokeStyle=this.selected?"#eab308":this.color;ctx.lineWidth=3;ctx.stroke();drawArrowHead(ctx,start,end,ctx.strokeStyle);const mid={x:(start.x+end.x)/2,y:(start.y+end.y)/2};ctx.fillStyle=this.color;ctx.font="bold 12px sans-serif";ctx.fillText(`${this.label} (${this.len.toFixed(1)})`,mid.x+5,mid.y-5)}hitTest(wPos){const p1=this.origin,p2=MathLib.add(this.origin,this.vec),l2=(p1.x-p2.x)**2+(p1.y-p2.y)**2;if(l2===0)return false;const t=Math.max(0,Math.min(1,((wPos.x-p1.x)*(p2.x-p1.x)+(wPos.y-p1.y)*(p2.y-p1.y))/l2));const proj={x:p1.x+t*(p2.x-p1.x),y:p1.y+t*(p2.y-p1.y)};return MathLib.len(MathLib.sub(wPos,proj))<.4}}
+class Matrix extends SceneObject{constructor(v1,v2){super("matrix");this.deps=[v1,v2];this.label=`M${OBJ_ID-1}`;this.update()}getZIndex(){return 1}update(){if(!this.deps[0]||!this.deps[1])return;this.c1=this.deps[0].vec;this.c2=this.deps[1].vec;this.origin=this.deps[0].origin;this.det=MathLib.det(this.c1,this.c2);this.area=Math.abs(this.det);this.eigen=MathLib.solveEigen(this.c1,this.c2)}render(ctx,view){const o=view.toScreen(this.origin),p1=view.toScreen(MathLib.add(this.origin,this.c1)),p2=view.toScreen(MathLib.add(this.origin,this.c2)),pSum=view.toScreen(MathLib.add(this.origin,MathLib.add(this.c1,this.c2)));ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(pSum.x,pSum.y);ctx.lineTo(p2.x,p2.y);ctx.closePath();ctx.fillStyle=this.selected?"rgba(234,179,8,.3)":"rgba(124,58,237,.2)";ctx.fill();ctx.strokeStyle=this.selected?"#eab308":"rgba(124,58,237,.5)";ctx.lineWidth=1;ctx.stroke();ctx.fillStyle="#ddd6fe";ctx.font="11px sans-serif";ctx.fillText(`Area: ${this.area.toFixed(1)}`,pSum.x+5,pSum.y)}hitTest(wPos){const center=MathLib.add(this.origin,MathLib.scale(MathLib.add(this.c1,this.c2),.5));return MathLib.len(MathLib.sub(wPos,center))<1.2}}
+class EigenSystem extends SceneObject{constructor(matrix){super("eigen");this.deps=[matrix];this.label=`Eig(${matrix.label})`;this.update()}getZIndex(){return 2}update(){if(!this.deps[0])return;const mat=this.deps[0];this.origin=mat.origin;this.eigen=MathLib.solveEigen(mat.c1,mat.c2)}render(ctx,view){const o=view.toScreen(this.origin);if(this.eigen.length>0){this.eigen.forEach((e,idx)=>{const color=idx===0?"#4ade80":"#fb923c",end=view.toScreen(MathLib.add(this.origin,MathLib.scale(e.vec,e.val)));ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(end.x,end.y);ctx.strokeStyle=this.selected?"#eab308":color;ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);drawArrowHead(ctx,o,end,ctx.strokeStyle);ctx.fillStyle=color;ctx.font="11px sans-serif";ctx.fillText(`λ=${e.val.toFixed(2)}`,end.x,end.y-12)});if(this.eigen.length===2){const ev1=MathLib.scale(this.eigen[0].vec,this.eigen[0].val),ev2=MathLib.scale(this.eigen[1].vec,this.eigen[1].val),ep1=view.toScreen(MathLib.add(this.origin,ev1)),ep2=view.toScreen(MathLib.add(this.origin,ev2)),eSum=view.toScreen(MathLib.add(this.origin,MathLib.add(ev1,ev2)));ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(ep1.x,ep1.y);ctx.lineTo(eSum.x,eSum.y);ctx.lineTo(ep2.x,ep2.y);ctx.closePath();ctx.strokeStyle="rgba(255,255,255,.6)";ctx.setLineDash([3,3]);ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);const eArea=Math.abs(MathLib.det(ev1,ev2));ctx.fillStyle="#fff";ctx.fillText(`EigArea: ${eArea.toFixed(1)}`,eSum.x,eSum.y+12)}}}hitTest(wPos){return MathLib.len(MathLib.sub(wPos,this.origin))<.5}}
+class TransformedVector extends SceneObject{constructor(mat,vec){super("trans_vec");this.deps=[mat,vec];this.label=vec.label+"'";this.color=vec.color;this.update()}getZIndex(){return 3}update(){if(!this.deps[0]||!this.deps[1])return;this.origin=this.deps[1].origin;const orig=this.deps[1].vec;this.originalLen=MathLib.len(orig);this.vec=MathLib.transform(orig,this.deps[0].c1,this.deps[0].c2);this.len=MathLib.len(this.vec);this.scaleRatio=this.originalLen>1e-3?(this.len/this.originalLen).toFixed(2):"∞"}render(ctx,view){const mat=this.deps[0],s=view.toScreen(this.origin),e=view.toScreen(MathLib.add(this.origin,this.vec)),range=20;ctx.lineWidth=1;ctx.strokeStyle="rgba(167,139,250,.4)";ctx.beginPath();for(let i=-range;i<=range;i++){const pStart1=MathLib.add(this.origin,MathLib.add(MathLib.scale(mat.c1,i),MathLib.scale(mat.c2,-range))),pEnd1=MathLib.add(this.origin,MathLib.add(MathLib.scale(mat.c1,i),MathLib.scale(mat.c2,range))),sStart1=view.toScreen(pStart1),sEnd1=view.toScreen(pEnd1);ctx.moveTo(sStart1.x,sStart1.y);ctx.lineTo(sEnd1.x,sEnd1.y);const pStart2=MathLib.add(this.origin,MathLib.add(MathLib.scale(mat.c2,i),MathLib.scale(mat.c1,-range))),pEnd2=MathLib.add(this.origin,MathLib.add(MathLib.scale(mat.c2,i),MathLib.scale(mat.c1,range))),sStart2=view.toScreen(pStart2),sEnd2=view.toScreen(pEnd2);ctx.moveTo(sStart2.x,sStart2.y);ctx.lineTo(sEnd2.x,sEnd2.y)}ctx.stroke();const sC1=view.toScreen(MathLib.add(this.origin,mat.c1)),sC2=view.toScreen(MathLib.add(this.origin,mat.c2));ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(sC1.x,sC1.y);ctx.strokeStyle="#a78bfa";ctx.lineWidth=2.5;ctx.stroke();ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(sC2.x,sC2.y);ctx.strokeStyle="#a78bfa";ctx.lineWidth=2.5;ctx.stroke();ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.strokeStyle=this.selected?"#eab308":this.color;ctx.lineWidth=3;ctx.setLineDash([3,4]);ctx.stroke();ctx.setLineDash([]);drawArrowHead(ctx,s,e,ctx.strokeStyle);ctx.fillStyle=this.color;ctx.font="11px sans-serif";ctx.fillText(`${this.label} (L=${this.len.toFixed(1)}, Scale=${this.scaleRatio})`,e.x+8,e.y)}hitTest(wPos){const end=MathLib.add(this.origin,this.vec);return MathLib.len(MathLib.sub(wPos,end))<.5}}
+class LinearComb extends SceneObject{constructor(vectors){super("lin_comb");this.deps=[...vectors];this.coeffs=new Array(vectors.length).fill(1);this.update()}getZIndex(){return 4}update(){if(this.deps.length===0)return;this.origin=this.deps[0].origin;let res={x:0,y:0};this.deps.forEach((v,i)=>{if(v&&v.vec)res=MathLib.add(res,MathLib.scale(v.vec,this.coeffs[i]))});this.vec=res}render(ctx,view){const s=view.toScreen(this.origin),e=view.toScreen(MathLib.add(this.origin,this.vec));ctx.setLineDash([2,2]);ctx.lineWidth=1;if(this.deps.length===2){const p1=view.toScreen(MathLib.add(this.origin,MathLib.scale(this.deps[0].vec,this.coeffs[0]))),p2=view.toScreen(MathLib.add(this.origin,MathLib.scale(this.deps[1].vec,this.coeffs[1])));ctx.strokeStyle="rgba(255,255,255,.2)";ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(e.x,e.y);ctx.stroke();ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(e.x,e.y);ctx.stroke()}else{let curW=this.origin,curS=s;this.deps.forEach((v,i)=>{const step=MathLib.scale(v.vec,this.coeffs[i]),nextW=MathLib.add(curW,step),nextS=view.toScreen(nextW);ctx.beginPath();ctx.moveTo(curS.x,curS.y);ctx.lineTo(nextS.x,nextS.y);ctx.strokeStyle=v.color||"#fff";ctx.stroke();drawArrowHead(ctx,curS,nextS,ctx.strokeStyle);curW=nextW;curS=nextS})}ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.strokeStyle=this.selected?"#eab308":"#22d3ee";ctx.lineWidth=3;ctx.stroke();drawArrowHead(ctx,s,e,ctx.strokeStyle)}hitTest(wPos){const end=MathLib.add(this.origin,this.vec);return MathLib.len(MathLib.sub(wPos,end))<.5}}
+function drawArrowHead(ctx,start,end,color){const a=Math.atan2(end.y-start.y,end.x-start.x);ctx.beginPath();ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-10*Math.cos(a-Math.PI/6),end.y-10*Math.sin(a-Math.PI/6));ctx.lineTo(end.x-10*Math.cos(a+Math.PI/6),end.y-10*Math.sin(a+Math.PI/6));ctx.fillStyle=color;ctx.fill()}
+
+/* --- App State --- */
+const app={objects:[],selection:[],view:{cx:0,cy:0,zoom:40},add(o){this.objects.push(o);this.render();this.updateUI()},reset(){this.objects=[];this.selection=[];OBJ_ID=1;this.updateUI();this.render()},resetView(){this.view={cx:0,cy:0,zoom:40};this.render()},select(o,multi){if(!multi)this.selection=[];if(o&&!this.selection.includes(o))this.selection.push(o);this.objects.forEach(x=>x.selected=this.selection.includes(x));this.updateUI();this.render()},remove(o){const toRemove=[o];let changed=true;while(changed){changed=false;this.objects.forEach(x=>{if(!toRemove.includes(x)&&x.deps.some(d=>toRemove.includes(d))){toRemove.push(x);changed=true}})}this.objects=this.objects.filter(x=>!toRemove.includes(x));this.selection=this.selection.filter(x=>!toRemove.includes(x));this.updateUI();this.render()},updateUI(){document.getElementById("object-list").innerHTML=this.objects.map(o=>`<div class="obj-item ${o.selected?"selected":""}" onclick="app.clickList('${o.id}', event)"><span>${o.label} <span style="color:#64748b;font-size:10px">(${o.type})</span></span></div>`).join("");const sel=this.selection,types=sel.map(o=>o.type);document.getElementById("btn-create-vec").disabled=!(sel.length===2&&types.every(t=>t==="point"));document.getElementById("btn-create-mat").disabled=!(sel.length===2&&types.every(t=>t==="vector"));document.getElementById("btn-lin-comb").disabled=!(sel.length>=2&&types.every(t=>t==="vector"));document.getElementById("btn-create-eigen").disabled=!(sel.length===1&&types[0]==="matrix");document.getElementById("btn-apply-trans").disabled=!(sel.length===2&&types.includes("matrix")&&types.includes("vector"));const pPanel=document.getElementById("properties-panel");if(sel.length===1){const o=sel[0];let html=`<div style="margin-bottom:8px;font-weight:bold;color:var(--accent)">${o.label} <span style="font-size:11px;color:#64748b">(${o.type})</span></div>`;if(o.type==="point"){html+=`<div class="prop-group"><div class="prop-row"><label>X</label><input type="number" step="0.1" value="${o.pos.x.toFixed(2)}" onchange="actions.movePoint('${o.id}', this.value, null)"></div><div class="prop-row"><label>Y</label><input type="number" step="0.1" value="${o.pos.y.toFixed(2)}" onchange="actions.movePoint('${o.id}', null, this.value)"></div></div>`}else if(o.type==="vector"||o.type==="trans_vec"){html+=`<div class="prop-group"><div class="prop-row"><label>Len</label><input disabled value="${o.len.toFixed(2)}"></div>${o.type==="trans_vec"?`<div class="prop-row"><label>Scale</label><input disabled value="${o.scaleRatio}"></div>`:""}</div>`}else if(o.type==="matrix"){html+=`<div class="prop-group"><div style="font-size:10px;color:#94a3b8;margin-bottom:4px">矩阵值</div><div class="matrix-grid"><div class="matrix-val">${o.c1.x.toFixed(1)}</div><div class="matrix-val">${o.c2.x.toFixed(1)}</div><div class="matrix-val">${o.c1.y.toFixed(1)}</div><div class="matrix-val">${o.c2.y.toFixed(1)}</div></div><div class="prop-row"><label>Det</label><input disabled value="${o.det.toFixed(2)}"></div></div><div class="prop-group"><div style="font-size:10px;color:#94a3b8;margin-bottom:4px">特征系统</div>${o.eigen.map((e,i)=>`<div style="margin-bottom:6px;border-top:1px solid #334155;padding-top:4px"><div class="prop-row"><span style="color:${i==0?"#4ade80":"#fb923c"}">λ${i+1}</span> <span>= ${e.val.toFixed(2)}</span></div><div class="prop-row" style="color:#94a3b8;font-size:10px">v: [${e.vec.x.toFixed(2)}, ${e.vec.y.toFixed(2)}]</div></div>`).join("")||'<div style="color:#64748b;font-size:11px">无实特征值</div>'}</div>`}else if(o.type==="eigen"){html+=`<div class="prop-group"><div style="font-size:10px;color:#94a3b8;margin-bottom:4px">特征分析结果</div>${o.eigen.map((e,i)=>`<div style="margin-bottom:6px;border-top:1px solid #334155;padding-top:4px"><div class="prop-row"><span style="color:${i==0?"#4ade80":"#fb923c"}">λ${i+1}</span> <span>= ${e.val.toFixed(2)}</span></div><div class="prop-row" style="color:#94a3b8;font-size:10px">v: [${e.vec.x.toFixed(2)}, ${e.vec.y.toFixed(2)}]</div></div>`).join("")||'<div style="color:#64748b;font-size:11px">无实特征值</div>'}</div>`}else if(o.type==="lin_comb"){html+=`<div class="prop-group"><div class="prop-row"><label>Count</label><input disabled value="${o.deps.length}"></div></div>`}pPanel.innerHTML=html}else{pPanel.innerHTML='<div style="color:#64748b;font-size:12px;text-align:center">未选择对象</div>'}const combObj=sel.find(o=>o.type==="lin_comb")||this.objects.find(o=>o.type==="lin_comb"),cCtrl=document.getElementById("comb-controls");if(combObj&&sel.includes(combObj)){cCtrl.style.display="flex";let html="";combObj.coeffs.forEach((val,idx)=>{const valId=`comb-${combObj.id}-val-${idx}`;html+=`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:10px;color:#94a3b8;font-weight:bold;">k${idx+1}</span><div class="val-display" id="${valId}">${val.toFixed(1)}</div></div><input type="range" min="-20" max="20" step="0.1" value="${val}" oninput="actions.updateCombCoeff('${combObj.id}', ${idx}, this.value, '${valId}')">${idx<combObj.coeffs.length-1?'<div style="width:1px;height:30px;background:#475569;"></div>':""}`});cCtrl.innerHTML=html}else cCtrl.style.display="none"},clickList(id,e){const o=this.objects.find(x=>x.id===id);this.select(o,e.ctrlKey)},render(){const ctx=canvas.getContext("2d"),{width,height}=canvas;ctx.clearRect(0,0,width,height);const view={toScreen:p=>({x:width/2+(p.x-this.view.cx)*this.view.zoom,y:height/2-(p.y-this.view.cy)*this.view.zoom}),toWorld:s=>({x:this.view.cx+(s.x-width/2)/this.view.zoom,y:this.view.cy-(s.y-height/2)/this.view.zoom})};drawGrid(ctx,view,width,height);[...this.objects].sort((a,b)=>a.getZIndex()-b.getZIndex()).forEach(o=>{o.update();o.render(ctx,view)})}};
+/* --- Actions --- */
+const actions={createVector:()=>app.add(new Vector(app.selection[0],app.selection[1])),createMatrix:()=>app.add(new Matrix(app.selection[0],app.selection[1])),createLinComb:()=>app.add(new LinearComb(app.selection)),createEigen:()=>app.add(new EigenSystem(app.selection[0])),applyTransform:()=>{const m=app.selection.find(o=>o.type==="matrix"),v=app.selection.find(o=>o.type==="vector");app.add(new TransformedVector(m,v))},movePoint:(id,x,y)=>{const p=app.objects.find(o=>o.id===id);if(p){if(x!==null)p.pos.x=parseFloat(x);if(y!==null)p.pos.y=parseFloat(y);app.render()}},updateCombCoeff:(id,idx,val,displayId)=>{const o=app.objects.find(x=>x.id===id);if(o&&o.type==="lin_comb"){o.coeffs[idx]=parseFloat(val);const disp=document.getElementById(displayId);if(disp)disp.textContent=o.coeffs[idx].toFixed(1);app.render()}},deleteSelected:()=>{const sel=[...app.selection];sel.forEach(o=>app.remove(o));hideCtxMenu()}};
+/* --- Grid --- */
+function drawGrid(ctx,view,w,h){ctx.lineWidth=1;ctx.strokeStyle="#334155";ctx.globalAlpha=.4;const tl=view.toWorld({x:0,y:0}),br=view.toWorld({x:w,y:h});ctx.beginPath();for(let x=Math.floor(tl.x);x<=Math.ceil(br.x);x++){const p=view.toScreen({x,y:0});ctx.moveTo(p.x,0);ctx.lineTo(p.x,h)}for(let y=Math.floor(br.y);y<=Math.ceil(tl.y);y++){const p=view.toScreen({x:0,y});ctx.moveTo(0,p.y);ctx.lineTo(w,p.y)}ctx.stroke();ctx.globalAlpha=1;const o=view.toScreen({x:0,y:0});ctx.strokeStyle="#94a3b8";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,o.y);ctx.lineTo(w,o.y);ctx.moveTo(o.x,0);ctx.lineTo(o.x,h);ctx.stroke()}
+/* --- Interaction --- */
+const canvas=document.getElementById("canvas"),ctxMenu=document.getElementById("context-menu");let dragging=null,isPanning=false,lastPos={x:0,y:0};
+function resize(){canvas.width=canvas.parentElement.clientWidth;canvas.height=canvas.parentElement.clientHeight;app.render()}
+window.addEventListener("resize",resize);setTimeout(resize,0);window.addEventListener("click",hideCtxMenu);
+function hideCtxMenu(){ctxMenu.style.display="none"}
+canvas.addEventListener("mousedown",e=>{hideCtxMenu();const rect=canvas.getBoundingClientRect(),m={x:e.clientX-rect.left,y:e.clientY-rect.top};lastPos=m;if(e.button===1){isPanning=true;e.preventDefault();return}if(e.button===2)return;const v=app.view,w={x:v.cx+(m.x-canvas.width/2)/v.zoom,y:v.cy-(m.y-canvas.height/2)/v.zoom},hit=[...app.objects].sort((a,b)=>b.getZIndex()-a.getZIndex()).find(o=>o.hitTest(w));if(hit){app.select(hit,e.ctrlKey);if(hit.type==="point")dragging=hit}else{const sx=e.altKey?w.x:snapIfNear(w.x),sy=e.altKey?w.y:snapIfNear(w.y);app.add(new Point(sx,sy))}});
+canvas.addEventListener("mousemove",e=>{const rect=canvas.getBoundingClientRect(),m={x:e.clientX-rect.left,y:e.clientY-rect.top};if(isPanning){app.view.cx-=(m.x-lastPos.x)/app.view.zoom;app.view.cy+=(m.y-lastPos.y)/app.view.zoom;lastPos=m;app.render();return}if(dragging){const v=app.view,w={x:v.cx+(m.x-canvas.width/2)/v.zoom,y:v.cy-(m.y-canvas.height/2)/v.zoom};if(!e.altKey){w.x=snapIfNear(w.x);w.y=snapIfNear(w.y)}dragging.pos=w;app.updateUI();app.render()}});
+canvas.addEventListener("mouseup",()=>{isPanning=false;dragging=null});
+canvas.addEventListener("contextmenu",e=>{e.preventDefault();const rect=canvas.getBoundingClientRect(),m={x:e.clientX-rect.left,y:e.clientY-rect.top},v=app.view,w={x:v.cx+(m.x-canvas.width/2)/v.zoom,y:v.cy-(m.y-canvas.height/2)/v.zoom},hit=[...app.objects].sort((a,b)=>b.getZIndex()-a.getZIndex()).find(o=>o.hitTest(w));if(hit)app.select(hit);else app.select(null);ctxMenu.style.display="block";ctxMenu.style.left=e.clientX+"px";ctxMenu.style.top=e.clientY+"px"});
+canvas.addEventListener("wheel",e=>{e.preventDefault();const s=e.deltaY>0?.9:1.1;app.view.zoom=Math.max(5,Math.min(200,app.view.zoom*s));app.render()},{passive:false});
+/* Demo */
+(function(){const p1=new Point(0,0),p2=new Point(3,0),p3=new Point(1,2);app.add(p1);app.add(p2);app.add(p3);const v1=new Vector(p1,p2),v2=new Vector(p1,p3);app.add(v1);app.add(v2);app.add(new Matrix(v1,v2))})();
+/* --- AI Integration --- */
+const AIBridge={handleResponse(d){hideTyping();console.log("🤖 AI 指令:",d);addMessage(d.explanation,"ai",d.lean);switch(d.operation){case"vector_add":case"lin_comb":this.drawLinComb(d.inputs);break;case"mat_mul":this.drawMatMul(d.inputs);break;case"eigen":this.drawEigen(d.inputs);break;case"lean_statement":case"lean_intro":break;default:console.warn("未知的操作:",d.operation)}},drawLinComb(inputs){app.reset();const vecs=inputs.vectors||[[1,0],[0,1]],p0=new Point(0,0);app.add(p0);const vectors=vecs.map(v=>{const p=new Point(v[0],v[1]);app.add(p);const vObj=new Vector(p0,p);app.add(vObj);return vObj});const comb=new LinearComb(vectors);app.add(comb);app.select(comb)},drawMatMul(inputs){app.reset();const mVal=inputs.matrix||[[1,0],[0,1]],p0=new Point(0,0);app.add(p0);const pCol1=new Point(mVal[0][0],mVal[1][0]),pCol2=new Point(mVal[0][1],mVal[1][1]);app.add(pCol1);app.add(pCol2);const vCol1=new Vector(p0,pCol1),vCol2=new Vector(p0,pCol2);app.add(vCol1);app.add(vCol2);const matrix=new Matrix(vCol1,vCol2);app.add(matrix);const pTest=new Point(1,1);app.add(pTest);const vTest=new Vector(p0,pTest);app.add(vTest);const vTrans=new TransformedVector(matrix,vTest);app.add(vTrans);app.select(matrix)},drawEigen(inputs){this.drawMatMul(inputs);const mat=app.objects.find(o=>o.type==="matrix");if(mat)app.add(new EigenSystem(mat))}};
+function showTyping(){hideTyping();const history=document.getElementById("chat-history");const div=document.createElement("div");div.id="chat-typing";div.className="typing";div.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';history.appendChild(div);history.scrollTop=history.scrollHeight}
+function hideTyping(){const el=document.getElementById("chat-typing");if(el)el.remove()}
+async function sendChat(){const input=document.getElementById("chat-input"),msg=input.value.trim();if(!msg)return;addMessage(msg,"user");input.value="";input.disabled=true;showTyping();try{const res=await fetch("http://127.0.0.1:5000/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})}),data=await res.json();hideTyping();if(data.error){addMessage(`Error: ${data.error}`,"ai")}else{AIBridge.handleResponse(data)}}catch(e){hideTyping();addMessage(`Server Error: ${e.message}. Is backend running?`,"ai")}finally{input.disabled=false;input.focus()}}
+function addMessage(text,role,leanData){hideTyping();const history=document.getElementById("chat-history"),div=document.createElement("div");div.className=`msg-${role}`;let html=text;if(leanData){html+=`<div style="margin-top:8px;border-top:1px solid #475569;padding-top:4px;"><div style="font-weight:bold;color:#fb923c;font-size:11px;">${leanData.statement_cn||"Lean 定理"}</div>`;if(leanData.lean_code)html+=`<pre>${leanData.lean_code}</pre>`;if(leanData.hint)html+=`<div style="color:#94a3b8;font-style:italic;font-size:11px;margin-top:4px;">💡 ${leanData.hint}</div>`;html+="</div>"}div.innerHTML=html;history.appendChild(div);history.scrollTop=history.scrollHeight}
+</script>
 </body>
-
 </html>
