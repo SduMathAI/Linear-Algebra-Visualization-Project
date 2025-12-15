@@ -1,11 +1,8 @@
 # Linear-Algebra-Visualization-Project
 山东大学 AI 导论期末作业 - 线性代数可视化
 
-为了启用 Agent，你需要在后端设置 DeepSeek API Key，并运行 `app.py`。
+我已经在 `.env` 中设置了 Deepseek API Key。为了启用 Agent，你需要运行后端 `app.py`。
 ```bash
-# 设置 DeepSeek API Key
-$env:DEEPSEEK_API_KEY="sk-65ed47874bb2464ba4091d69f39cfec2"
-
 # 运行项目
 python backend/app.py
 ```
