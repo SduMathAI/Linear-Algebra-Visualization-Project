@@ -1,0 +1,348 @@
+﻿神经符号协同：构建基于AI辅助的线性代数可视化与形式化验证系统——数学院AI导论课程项目深度技术报告
+1. 执行摘要与项目愿景
+1.1 项目背景与核心挑战
+本报告旨在为数学院“AI导论”课程的一个10人学生小组提供一份详尽的、执行级的大作业设计方案。基于提供的需求描述（图片1-3），该项目的核心目标是构建一个可交互的Web平台，不仅能够可视化线性代数的核心概念（向量加法、线性组合、矩阵乘法、特征值几何意义），还需要在此基础上引入“数学形式化（Formalization）”的创新模块，利用Lean 4语言进行定理的自动生成与验证 1。
+项目组面临的主要挑战在于成员技能结构的非均衡性：仅组长具备计算机科学（CS）基础，其余9名成员均为数学背景，CS基础普遍较弱。这一结构决定了传统的软件工程模式（如纯手工编写React组件或复杂的后端逻辑）极易导致项目延期或失败。因此，本方案提出了一种**“AI优先（AI-First）”的开发范式**，利用最新的AI编程工具（如Trae AI）作为“虚拟技术合伙人”，填补团队在编码能力上的短板，同时最大化利用成员深厚的数学功底。
+1.2 核心创新：神经符号双引擎架构
+响应图片3中提出的“增加数学形式化模块”及“Agent证明生成”的创新点，本方案设计了**“神经符号双引擎（Neuro-Symbolic Dual-Engine）”**架构：
+1. 直观引擎（Visualization Engine）： 基于React和Mafs.dev，负责将用户的鼠标交互转化为几何变换，提供直观的数学感知 3。
+2. 逻辑引擎（Formalization Engine）： 基于Lean 4和Mathlib，负责将前端的几何状态转化为严谨的数学命题，并利用LLM Agent尝试自动证明 4。
+这一架构不仅满足了课程对“可视化实验平台”的基本要求，更通过引入形式化验证，将项目提升至学术研究的前沿水平，实现了从“直观理解”到“机器证明”的闭环教育体验。
+________________
+2. 需求分析与系统设计哲学
+2.1 需求解构（基于图片1-3）
+根据提供的课程作业要求及聊天记录，我们将需求细化为以下三个层级：
+表 2.1：项目需求分级矩阵
+需求层级
+	来源
+	具体内容
+	技术映射
+	基础功能
+	图片1
+	向量加法、线性组合动画演示
+	React + Mafs (Interactive Vectors)
+	
+
+	图片1
+	矩阵乘法的几何意义
+	React + Mafs (Grid Transformation)
+	
+
+	图片1
+	特征值/特征向量的可视化（旋转与拉伸）
+	React + Mafs (Eigenvalue Overlay)
+	
+
+	图片1
+	支持用户自定义矩阵输入与实时显示
+	React State Management + Flask API
+	技术约束
+	图片2
+	自建Web服务，浏览器访问
+	Flask (Backend) + Vite (Frontend)
+	
+
+	图片2
+	推荐打包成Docker
+	Dockerfile + Docker Compose
+	
+
+	图片2
+	可使用AI工具（如Trae）辅助开发
+	Trae IDE + Claude 3.5 Sonnet / GPT-4
+	
+
+	图片2
+	输出技术报告、Prompt记录、分工说明
+	文档工程与Prompt Engineering
+	创新拓展
+	图片3
+	增加数学形式化模块（Lean语言）
+	Lean 4 REPL + Mathlib4
+	
+
+	图片3
+	偏理论证明生成的Agent模块
+	LLM Agent + Chain-of-Thought Prompting
+	
+
+	图片3
+	针对“第2题”等代数命题的深度形式化
+	特定定理的Lean模板化验证
+	2.2 设计哲学：低代码壁垒，高数学保真
+针对团队“强数弱码”的特点，我们的设计哲学是**“Prompt即代码（Prompt as Code）”**。
+* 分工策略： 数学系学生不需要精通CSS布局或Rust内存管理，他们只需能够清晰地用自然语言描述数学逻辑，并学会编写高质量的提示词（Prompt）指挥AI生成代码。
+* 工具选型： 拒绝高学习曲线的工具（如Three.js的原生WebGL编程），选择声明式、数学友好的库（如Mafs.dev），并利用封装好的AI IDE（Trae）来处理工程脚手架 6。
+________________
+3. 总体技术架构与选型论证
+为了实现上述目标，我们设计了包含前端展示层、中间逻辑层和底层验证层的三层架构。
+3.1 开发环境：Trae AI —— 团队的“第11人”
+对于缺乏工程经验的团队，IDE的选择至关重要。我们强烈推荐使用 Trae AI 8 作为全员统一的开发环境，而非标准的VS Code。
+* 选型理由：
+   * Builder Mode（构建者模式）： Trae不仅是代码补全工具，它具备“从0到1”构建项目的能力。组员可以说“创建一个包含左侧控制栏和右侧绘图区的React页面”，Trae会自动生成文件结构、安装依赖并编写样板代码 6。这对不懂React项目结构的数学系学生是救命稻草。
+   * Webview实时预览： Trae内置了Web预览功能，代码生成的修改能即时反馈在右侧窗口，符合“可视化”开发的直觉需求 12。
+   * MCP（模型上下文协议）支持： 这是Trae相对于其他AI编辑器的杀手级特性。团队可以将Lean 4的文档、Mathlib的定义作为外部上下文接入Trae，极大地提高AI生成Lean代码的准确性，减少幻觉 9。
+3.2 前端可视化：React + Mafs.dev
+虽然Manim在数学视频制作中处于统治地位，但它生成的视频缺乏Web端的实时交互性（如拖拽向量改变矩阵参数）14。因此，我们选择 React 搭配 Mafs.dev。
+* 选型理由：
+   * 交互性： Mafs.dev 专为React设计，提供<MovablePoint />等组件，允许用户直接拖动图表中的点，并实时触发React的状态更新 7。这完美契合图片1中“可交互”的要求。
+   * 声明式数学： Mafs的代码风格非常接近数学描述。例如绘制向量只需 <Vector tail={} head={} />，数学系学生极易理解 3。
+   * Latex支持： Mafs内置了对LaTeX公式渲染的支持，可以直接在图表中显示数学公式，满足学术展示的高标准 7。
+3.3 后端逻辑：Flask (Python)
+虽然Node.js是Web开发的常用选择，但对于数学系学生，Python 及其微框架 Flask 是更优解 16。
+* 选型理由：
+   * 语言亲和力： 数学系学生通常在数值计算课程中接触过Python（NumPy/SciPy），学习成本最低。
+   * 科学计算库： 后端需要进行特征值计算（用于验证前端展示的正确性），Python拥有NumPy生态的绝对优势。
+   * 胶水语言： Flask需要调用系统命令来运行Lean 4编译器，Python的subprocess模块处理此类任务非常成熟 18。
+3.4 形式化验证引擎：Lean 4 + Mathlib4
+这是响应图片3创新的核心。Lean 4 是当前最先进的交互式定理证明器 1。
+* 选型理由：
+   * 社区活跃度： Lean 4拥有庞大的数学库Mathlib4，涵盖了线性代数的大部分内容（向量空间、线性映射、特征值等）19。
+   * 编程能力： Lean 4本身也是一种函数式编程语言，可以被编译成可执行文件，方便通过命令行接口（CLI）与Python后端进行交互 21。
+________________
+4. 团队分工与协作流程 (10人小组)
+针对10人的规模，我们将团队分为四个职能小组。这种分工模拟了现代软件开发的“全栈+领域专家”模式，既保证了工程落地，又发挥了数学专长。
+4.1 角色定义与职责
+A组：系统架构与集成组 (The Architects)
+* 人数： 2人 (包含组长)
+* 人员画像： 组长（CS基础好），另一位逻辑思维严密、善于统筹的成员。
+* 核心职责：
+   1. 基础设施搭建： 配置Git仓库，编写Dockerfile，确保所有人的Trae环境配置一致（通过.trae/rules文件统一Prompt规范）22。
+   2. 后端开发： 搭建Flask服务器，设计前后端交互的JSON API接口。
+   3. 系统集成： 负责将B组的组件、C组的定理模板和D组的Agent逻辑整合到一起，确保Docker容器能一键启动 23。
+B组：交互可视化组 (The Visualizers)
+* 人数： 3人
+* 人员画像： 对几何直观敏感，审美较好，愿意尝试React前端开发的成员。
+* 核心职责：
+   1. 界面开发： 利用Trae生成React代码，构建网页布局（控制面板、绘图区）。
+   2. Mafs组件实现： 实现向量拖拽、矩阵变换动画、特征向量的视觉高亮 3。
+   3. 用户体验： 设计交互流程，例如“当用户拖动基向量导致行列式为0时，显示警告”。
+C组：形式化数学组 (The Formalizers)
+* 人数： 3人
+* 人员画像： 数学功底最扎实，对抽象代数、Lean语言感兴趣的成员。
+* 核心职责：
+   1. Mathlib映射： 研究Mathlib4文档，找到线性代数概念对应的Lean定义（如Module.End.HasEigenvalue）20。
+   2. 模板编写： 编写Lean 4的“证明模板文件”。这些文件留有空位（Placeholder），供后端填入用户输入的具体数字。
+   3. 定理选取： 针对图片3提到的“Problem 2”及其他深层次命题，设计可被形式化的具体数学场景（如“证明某矩阵可对角化”）。
+D组：AI Agent与提示工程组 (The Prompt Engineers)
+* 人数： 2人
+* 人员画像： 思维活跃，擅长与AI对话，对LLM应用感兴趣的成员。
+* 核心职责：
+   1. Agent开发： 设计用于“自动证明”的Prompt Chains（思维链）。当用户提出一个猜想时，D组设计的Prompt会指导LLM生成Lean代码 25。
+   2. Autoformalization： 利用Few-Shot Prompting技术，将自然语言问题转化为Lean定理声明 4。
+   3. 技术报告撰写： 整理所有Prompt记录，制作演示视频和PPT（图片2要求）。
+4.2 协作工作流 (The Workflow)
+1. 定义接口 (Week 1): A组定义API标准（例如：POST /verify 接收矩阵数据，返回 True/False）。
+2. 并行开发 (Week 2-6):
+   * B组用Trae生成前端，实现“拖拽向量改变矩阵”的功能。
+   * C组在Lean中手动证明几个典型例子（如2x2矩阵的特征值验证），提炼出模板。
+   * D组测试不同的Prompt，看能否让Claude/GPT-4自动写出C组的证明。
+3. 联调集成 (Week 7-9): A组将B的前端请求转发给Flask，Flask调用D组的Prompt生成Lean代码，再传给C组配置好的Lean编译器运行，最后将结果返回前端。
+________________
+5. 详细技术方案：可视化系统 (B组任务)
+5.1 技术栈深度解析：React + Mafs
+Mafs.dev 是本项目的核心前端库。它基于SVG，性能优异且API设计极具数学美感。
+代码生成策略（Prompt Strategy）：
+B组同学不需要手写复杂的JSX，而是通过Trae的Builder Mode输入如下指令：
+“创建一个React组件，使用Mafs库。在坐标系中显示两个向量 $\vec{u}$ 和 $\vec{v}$，起点都在原点。允许用户拖拽这两个向量的终点。同时显示这两个向量的和 $\vec{u}+\vec{v}$，用虚线表示平行四边形法则。并在侧边栏显示这三个向量的当前坐标。”
+核心组件设计：
+1. <Mafs> 画布： 设置 viewBox 和 zoom 属性，允许用户缩放平移 27。
+2. <Coordinates.Cartesian />： 绘制网格线，帮助用户建立坐标感。
+3. <MovablePoint />： 这是实现交互的关键。将向量的终点绑定到一个React State（状态变量），当点移动时，State更新，进而触发整个画面的重绘 7。
+4. <Vector />： 用于绘制基向量和变换后的向量。
+5. <Transform />： Mafs提供的高级组件。通过传入一个 $2 \times 2$ 矩阵，可以自动对包裹在其中的所有图形元素应用线性变换 28。这完美解决了“可视化矩阵乘法几何意义”的需求——用户只需调整矩阵数值，网格和图形就会自动发生倾斜、旋转或缩放。
+5.2 线性代数核心场景实现
+* 场景一：基变换与线性组合
+   * 利用 <Vector> 显示基向量 $\hat{i}, \hat{j}$。
+   * 用户拖动滑块改变系数 $c_1, c_2$，画面实时显示 $c_1\hat{i} + c_2\hat{j}$ 的动态变化。
+* 场景二：特征值与特征向量
+   * 设计思路： 用户输入一个矩阵 $A$。系统计算出特征向量 $\vec{v}$ 和特征值 $\lambda$。
+   * 可视化： 在图中画出 $\vec{v}$（红色）和 $A\vec{v}$（蓝色）。
+   * 交互点： 允许用户拖动任意向量 $\vec{x}$。当 $\vec{x}$ 与特征向量方向重合时，系统高亮显示，并弹出提示“Found Eigenvector!”，直观演示“共线”的几何含义 29。
+________________
+6. 详细技术方案：形式化与Agent系统 (C组 & D组任务)
+这是项目的亮点，也是难度最高的部分。我们将利用Lean 4的强大验证能力和LLM的生成能力，构建一个“AI数学助教”。
+6.1 形式化验证流水线 (The Pipeline)
+为了解决图片3中提到的“增加数学形式化模块”，我们设计如下流水线：
+1. 状态捕获： 前端捕获当前的数学对象，例如矩阵 $M = \begin{pmatrix} 2 & 0 \\ 0 & 3 \end{pmatrix}$ 和向量 $\vec{v} = \begin{pmatrix} 1 \\ 0 \end{pmatrix}$。
+2. 命题生成 (Autoformalization)： 后端通过Prompt将这些数据转化为Lean 4的代码。
+   * Prompt示例： "Translate the following matrix and vector into a Lean 4 theorem statement checking if v is an eigenvector of M."
+3. 形式化声明 (Lean Statement)：
+Lean
+import Mathlib.LinearAlgebra.Matrix.Basic
+def M : Matrix (Fin 2) (Fin 2) ℚ :=!![2, 0; 0, 3]
+def v : Fin 2 → ℚ :=!
+-- 验证是否存在标量 \lambda 使得 M * v = \lambda * v
+example : ∃ (λ : ℚ), M.mulVec v = λ • v := by...
+
+4. 自动证明 (Agent Execution)：
+   * 方案A (简单)： 对于计算类验证（如特征值验证），Lean 4 提供了 norm_num 和 simp 等强力战术（Tactics），可以自动完成证明 31。
+   * 方案B (复杂 - 针对图片3的Problem 2)： 对于理论证明（如“证明对称矩阵一定可对角化”），需要调用 LLM Agent。
+6.2 Agent 模块设计 (针对 Image 3 "Problem 2")
+图片3中提到的“Problem 2”和“Deep层面的命题”，我们设计一个 "Theorem Proving Agent"：
+   * 技术核心： 利用 Lean 4 的 REPL 环境作为 Agent 的“工具”。
+   * 工作流：
+   1. 用户在前端提出：“证明矩阵M的特征值之和等于其迹（Trace）”。
+   2. Flask后端调用 GPT-4 或 Claude 3.5。
+   3. System Prompt (D组设计): "You are a Lean 4 expert. Use the available tools to prove the statement. Output specific tactics." 2
+   4. 交互循环：
+   * Agent输出：rw [Matrix.trace_eq_sum_eigenvalues]
+   * Lean REPL反馈：Goal state updated... 或 Error: tactic failed。
+   * Agent根据反馈修正策略，直到证明完成（Closed Goal）。
+   * 降低难度策略： 由于全自动证明极其困难，我们建议C组预先准备好Mathlib中关于“对角化”、“特征值存在性”的定理库 34，Agent的主要工作是**检索（Retrieval）**这些已有定理并应用，而不是从公理开始重写。这被称为 RAG (Retrieval-Augmented Generation) for Proofs 36。
+6.3 为什么选择 Lean 4 而非 Python 验证？
+这是一个必须在技术报告中阐明的关键点。
+   * Python (NumPy) 做的是数值计算，存在浮点误差（例如 2.999999!= 3）。
+   * Lean 4 做的是符号推理，它使用的是精确的代数结构（Field, Ring, Module）。
+   * 教育意义： 通过对比Python的“近似解”和Lean的“精确解”，学生能深刻理解应用数学与纯粹数学的区别。
+________________
+7. 系统集成与部署 (A组任务)
+7.1 后端 API 设计
+为了解耦前后端，API 应简洁明了。
+   * POST /api/check_eigenvector
+   * Input: { "matrix": [,], "vector": , "lambda": 3 }
+   * Process: 生成Lean代码，运行 lean checker.lean。
+   * Output: { "verified": false, "error": "LHS ≠ RHS", "lean_output": "..." }
+7.2 Docker 化部署 (满足图片2要求)
+为了避免数学系同学陷入环境配置的泥潭，A组必须制作一个 docker-compose.yml 文件 23。
+
+
+YAML
+
+
+
+
+version: '3.8'
+services:
+ frontend:
+   build:./frontend
+   ports: ["3000:3000"]
+ backend:
+   build:./backend
+   ports: ["5000:5000"]
+   volumes:
+     -./lean_project:/app/lean_project  # 挂载Lean项目
+ lean_server:
+   image: leanprover/lean4:latest
+   command: lake serve
+
+优势： 任何组员只需安装Docker Desktop，运行 docker-compose up，即可拥有完整开发环境，无需本地安装Node.js, Python, Lean 4。
+________________
+8. 实施路线图与里程碑
+为了确保学期末能按时交付，我们将项目划分为5个Sprint（冲刺阶段），每个阶段2周。
+表 8.1：项目实施路线图
+阶段
+	时间
+	核心目标
+	关键交付物 (Deliverables)
+	负责组
+	S1: 基础建设
+	Week 1-2
+	跑通Hello World
+	Git仓库，Docker环境，Trae规则配置
+	A, B, D
+	S2: 可视化核心
+	Week 3-4
+	完成矩阵变换动画
+	Mafs交互组件，矩阵乘法演示
+	B
+	S3: 形式化联调
+	Week 5-6
+	Python调通Lean
+	Lean模板库，Flask API接口
+	C, A
+	S4: Agent接入
+	Week 7-8
+	实现自动证明Demo
+	“Problem 2”的自动证明演示，创新点落地
+	D, C
+	S5: 整合与文档
+	Week 9-10
+	最终交付
+	演示视频，PPT，技术报告，Docker镜像
+	全员
+	________________
+9. 风险管理与Plan B
+针对团队背景，我们预判了以下风险及应对措施：
+   1. 风险：Lean 4 学习曲线过陡，C组无法写出证明。
+   * Plan B： 降级目标。不再追求“自动证明任意命题”，而是将Lean作为“语法检查器”。只利用Lean检查命题的格式是否正确（Type Check），或者只验证极简单的代数恒等式（如 a + b = b + a），复杂的线性代数证明直接引用Mathlib的结论而不展开证明过程 37。
+   2. 风险：React 组件逻辑太复杂，Trae生成的代码报错。
+   * Plan B： 回退到 Streamlit。Streamlit 是纯Python写Web UI的框架，极易上手，虽然交互性不如React+Mafs流畅，但能保底完成“Web平台”的要求 16。这是最后的“逃生舱”。
+   3. 风险：Agent 无法生成正确的 Lean 代码（幻觉严重）。
+   * Plan B： 使用 Few-Shot Prompting（少样本提示）。D组人工精修3-5个完美的“自然语言->Lean”转换示例，硬编码在Prompt中，强迫Agent照葫芦画瓢，大幅提高准确率 26。
+________________
+10. 结论
+本方案不仅仅是一份软件开发计划，更是一次教育实验。通过引入 Trae AI 作为技术杠杆，我们使数学系学生能够跨越编程语言的壁垒，直接构建现代化的Web应用。通过 React + Mafs，我们将抽象的矩阵运算转化为可触摸的几何体验；通过 Lean 4 + Agent，我们展示了人工智能如何辅助严谨的数学推理。
+对于数学院的学生而言，这个项目最大的价值不在于写出了多少行代码，而在于体验了**“AI for Math”**的完整范式：从直观猜想，到形式化描述，再到机器辅助证明。这正是AI导论课程希望传达的核心理念。
+________________
+附录：技术选型对比表 (用于答辩PPT)
+维度
+	方案 A (推荐)
+	方案 B (传统)
+	方案 C (保底)
+	决策理由
+	IDE
+	Trae AI
+	VS Code
+	Jupyter Notebook
+	Trae的Builder模式能极大降低React/Lean入门难度。
+	前端
+	React + Mafs
+	Vanilla JS + D3
+	Streamlit
+	Mafs专为数学交互设计，Latex支持好；React组件化利于分工。
+	后端
+	Flask
+	Django
+	FastAPI
+	Flask轻量级，适合小型API服务，Python生态友好。
+	形式化
+	Lean 4
+	Coq / Isabelle
+	SymPy (Python)
+	Lean 4是当前数学形式化领域最热门工具，符合“创新点”要求。
+	部署
+	Docker
+	裸机部署
+	HuggingFace Space
+	Docker保证环境一致性，符合图片2中“打包成Docker”的加分项。
+	引用的著作
+   1. Lean enables correct, maintainable, and formally verified code, 访问时间为 十二月 6, 2025， https://lean-lang.org/
+   2. NL2Lean: Translating Natural Language into Lean 4 through Multi-Aspect Reinforcement Learning - ACL Anthology, 访问时间为 十二月 6, 2025， https://aclanthology.org/2025.emnlp-main.1586.pdf
+   3. Debug | Guides | Mafs, 访问时间为 十二月 6, 2025， https://mafs.dev/guides/display/debug
+   4. Autoformalizer: Build math proofs in Lean with LLMs - Ethan Woodbury, 访问时间为 十二月 6, 2025， https://ewoodbury.com/posts/2025-09-27_lean_autoformalizer/
+   5. TheoremLlama: Transforming General-Purpose LLMs into Lean4 Experts - arXiv, 访问时间为 十二月 6, 2025， https://arxiv.org/html/2407.03203v1
+   6. Trae - Plugin, 访问时间为 十二月 6, 2025， https://www.marscode.com/
+   7. Hello f(x) | Guides - Mafs: React components for interactive math, 访问时间为 十二月 6, 2025， https://mafs.dev/guides/get-started/hello-f-x
+   8. Trae AI - Future Tools, 访问时间为 十二月 6, 2025， https://www.futuretools.io/tools/trae-ai
+   9. TRAE - Collaborate with Intelligence, 访问时间为 十二月 6, 2025， https://www.trae.ai/
+   10. TraeIDE, 访问时间为 十二月 6, 2025， https://traeide.com/
+   11. What is TRAE? - Documentation - TRAE, 访问时间为 十二月 6, 2025， https://docs.trae.ai/
+   12. Trae: Adaptive AI Code Editor - KDnuggets, 访问时间为 十二月 6, 2025， https://www.kdnuggets.com/trae-adaptive-ai-code-editor
+   13. Turn TRAE into a full AI Art Director using MCP — it designs images, icons, CSS, and UI components by itself. : r/Trae_ai - Reddit, 访问时间为 十二月 6, 2025， https://www.reddit.com/r/Trae_ai/comments/1or1p83/turn_trae_into_a_full_ai_art_director_using_mcp/
+   14. Isn't JavaScript better for something like Manim? : r/3Blue1Brown - Reddit, 访问时间为 十二月 6, 2025， https://www.reddit.com/r/3Blue1Brown/comments/kuf7om/isnt_javascript_better_for_something_like_manim/
+   15. I'm working on a JavaScript library that lets you declaratively build and animate interactive math visualizations - Reddit, 访问时间为 十二月 6, 2025， https://www.reddit.com/r/math/comments/ib6u8l/im_working_on_a_javascript_library_that_lets_you/
+   16. Flask vs Streamlit Comparison for Building Python Apps - NunarIQ, 访问时间为 十二月 6, 2025， https://www.nunariq.com/knowledgebase/flask-vs-streamlit/
+   17. React with Flask : Build Scalable Full-Stack Apps with Ease - eSparkBiz, 访问时间为 十二月 6, 2025， https://www.esparkinfo.com/software-development/technologies/reactjs/react-with-flask
+   18. oOo0oOo/leanclient: Python client to interact with the lean4 language server. - GitHub, 访问时间为 十二月 6, 2025， https://github.com/oOo0oOo/leanclient
+   19. Maths in Lean: linear algebra, 访问时间为 十二月 6, 2025， https://leanprover-community.github.io/theories/linear_algebra.html
+   20. Mathlib.LinearAlgebra.Eigenspace.Basic - IISc Math, 访问时间为 十二月 6, 2025， https://math.iisc.ac.in/~gadgil/PfsProgs25doc/Mathlib/LinearAlgebra/Eigenspace/Basic.html
+   21. LeanInteract: A Python Interface for Lean 4 - GitHub, 访问时间为 十二月 6, 2025， https://github.com/augustepoiroux/LeanInteract
+   22. Trae AI: A Guide With Practical Examples - DataCamp, 访问时间为 十二月 6, 2025， https://www.datacamp.com/tutorial/trae-ai
+   23. From Scratch to Full Stack: Hosting a React and Flask App with Nginx, Docker! - Medium, 访问时间为 十二月 6, 2025， https://medium.com/@nomannayeem/from-scratch-to-full-stack-hosting-a-react-and-flask-app-with-nginx-docker-39bad3598a1d
+   24. Mathlib.LinearAlgebra.Eigenspace.Basic - Lean community, 访问时间为 十二月 6, 2025， https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Eigenspace/Basic.html
+   25. Chain-of-Thought Prompting | Prompt Engineering Guide, 访问时间为 十二月 6, 2025， https://www.promptingguide.ai/techniques/cot
+   26. The Few Shot Prompting Guide - PromptHub, 访问时间为 十二月 6, 2025， https://www.prompthub.us/blog/the-few-shot-prompting-guide
+   27. Mafs | Guides, 访问时间为 十二月 6, 2025， https://mafs.dev/guides/display/mafs
+   28. Transform contexts | Guides - Mafs: React components for interactive math, 访问时间为 十二月 6, 2025， https://mafs.dev/guides/custom-components/contexts
+   29. Math for ML: Eigenvalues and Eigenvectors Explained Simply with Examples. - Medium, 访问时间为 十二月 6, 2025， https://medium.com/@ryassminh/math-for-ml-eigenvalues-and-eigenvectors-explained-simply-with-examples-f29459c9cc67
+   30. Eigenvalues and Eigenvectors, 访问时间为 十二月 6, 2025， https://textbooks.math.gatech.edu/ila/eigenvectors.html
+   31. lean - Highschool level linear algebra - Proof Assistants Stack Exchange, 访问时间为 十二月 6, 2025， https://proofassistants.stackexchange.com/questions/2485/highschool-level-linear-algebra
+   32. 2. Basics — Mathematics in Lean v4.19.0 documentation, 访问时间为 十二月 6, 2025， https://leanprover-community.github.io/mathematics_in_lean/C02_Basics.html
+   33. Prompt engineering - OpenAI API, 访问时间为 十二月 6, 2025， https://platform.openai.com/docs/guides/prompt-engineering
+   34. Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs, 访问时间为 十二月 6, 2025， https://leanprover-community.github.io/mathlib4_docs/Mathlib/LinearAlgebra/Matrix/Charpoly/Eigs.html
+   35. 5.3 Diagonalization - Berkeley Math, 访问时间为 十二月 6, 2025， https://math.berkeley.edu/~arash/54/notes/5_3.pdf
+   36. Herald: A Natural Language Annotated Lean 4 Dataset - arXiv, 访问时间为 十二月 6, 2025， https://arxiv.org/html/2410.10878v1
+   37. Which mathematical definitions should be formalised in Lean? - MathOverflow, 访问时间为 十二月 6, 2025， https://mathoverflow.net/questions/311071/which-mathematical-definitions-should-be-formalised-in-lean
+   38. The Conclusive Face-Off: Flask vs Streamlit | by Soma Bhadra | Medium, 访问时间为 十二月 6, 2025， https://somabhadra.medium.com/the-conclusive-face-off-flask-vs-streamlit-40bdef6859a4
+   39. Few-Shot Prompting: Teaching AI With Just a Few Examples | by Akanksha Sinha - Medium, 访问时间为 十二月 6, 2025， https://medium.com/@akankshasinha247/few-shot-prompting-teaching-ai-with-just-a-few-examples-6819273fd6e2
