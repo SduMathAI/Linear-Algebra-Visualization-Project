@@ -22,7 +22,7 @@ except Exception as e:
     print(f"Warning: DeepSeek client could not be initialized: {e}")
     client = None
 
-DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Docs')
+DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Docs', 'Agent_lean')
 
 def load_context():
     context = ""
