@@ -1,73 +1,57 @@
 # AI 辅助线性代数可视化与形式化验证系统项目报告
 
-## 1. 项目概况 (Executive Summary)
+## 1. 项目概述
 
-本项目旨在利用现代人工智能技术与Web开发框架，构建一个集“直观几何可视化”与“严谨数学形式化”于一体的线性代数教育平台。项目采用 **神经符号双引擎 (Neuro-Symbolic Dual-Engine)** 架构：前端通过 React + Mafs 引擎将抽象的矩阵运算转化为可交互的动态图形，后端结合 Flask 与模拟的 Lean 4 验证机制，展示了从直观理解到机器证明的完整数学探索路径。
+本项目聚焦“线性代数概念的交互式可视化 + AI 助教讲解”。前端为单页 Web 画布，[index.html](../index.html) 直接运行即可完成向量、矩阵、特征值等核心概念的几何演示；后端 [backend/app.py](../backend/app.py) 通过 DeepSeek Chat 生成结构化指令（JSON），驱动前端自动搭建场景，并可返回 Lean 风格的练习提示，形成“看得见、可操作、能讲清”的一站式学习体验。
 
-## 2. 技术架构 (Technical Architecture)
+## 2. 功能亮点
 
-基于团队“AI优先”的开发理念，我们构建了以下技术栈：
+- 交互式几何画布：创建点、向量、矩阵，支持矩阵作用于向量/矩阵、线性组合、特征系展示、SVD 动画分解；网格吸附、右键菜单、撤销/重做、变换动画齐全。
+- AI 助教聊天：输入自然语言（如“演示剪切矩阵”“展示特征向量”），后端返回 `operation` + `inputs` 的 JSON，前端自动绘制对应场景并给出中文解释。
+- Lean 提示占位：Agent 可在响应中附带 `lean.statement_cn/lean_code/hint` 字段，前端在聊天区以卡片形式展示，方便扩展正式的 Lean 练习。
+- 易于试验：默认载入示例对象，支持 Ctrl+Z/Ctrl+Y 历史回溯、Alt 取消吸附、中键平移、滚轮缩放，降低上手成本。
 
-### 2.1 架构设计
-- **前端 (Visualization Layer)**: 
-  - **框架**: React 18 (Vite 构建)
-  - **核心库**: `Mafs.dev` (高性能SVG数学可视化), `TailwindCSS` (样式), `Axios` (网络请求)
-  - **功能**: 实时响应用户的拖拽操作，动态更新向量加法、线性变换与特征向量的几何形态。
+## 3. 系统架构
 
-- **后端 (Logic & Formalization Layer)**:
-  - **框架**: Flask (Python 3.9)
-  - **计算引擎**: NumPy (负责高精度的数值计算，如特征值求解)
-  - **形式化模拟**: 模拟 Lean 4 定理证明器的接口，演示如何将自然语言命题转化为形式化代码并验证。
+### 3.1 前端（单页 Canvas）
+- 技术：原生 HTML/JS/CSS + `<canvas>` 绘制；仅依赖 marked.js（渲染聊天区 Markdown）。
+- 数学内核：`MathLib` 提供向量/矩阵运算、特征值求解、SVD 分解、极分解近似等；`SceneObject` 体系封装点、向量、矩阵、特征系、线性组合及变换结果。
+- 交互与动画：`HistoryManager` 负责撤销/重做与状态序列化；`AnimationEngine` 驱动矩阵乘法、SVD 分步动画；右键上下文菜单、网格吸附、拖拽聊天窗口等交互都内置。
+- AI 桥接：`AIBridge.handleResponse` 接收后端 JSON（operation ∈ vector_add/lin_comb/mat_mul/eigen/lean_*），自动创建或重置场景并输出解释文本。
 
-- **部署 (Deployment)**:
-  - Docker Containerization: 编写了 `docker-compose.yml`，实现前后端一键编排启动，保证开发环境的一致性。
+### 3.2 后端（Flask + DeepSeek）
+- 接口：`POST /chat`，请求体 `{ "message": "..." }`，返回统一 JSON：`operation`、`inputs`、`visualization_config`、`explanation`（可选 `lean` 字段）。
+- Prompt 约束：在 [backend/app.py](../backend/app.py) 中通过 `SYSTEM_PROMPT` 明确输出枚举、交互引导与 JSON 模板，若模型返回 Markdown 代码块会被自动剥离再解析。
+- 异常兜底：解析失败时返回 `operation: other` 与原始内容，便于前端提示错误；DeepSeek API 未配置时直接返回 500。
+- 示例与自检：
+  - [backend/example_scenarios.py](../backend/example_scenarios.py) 提供调用样例，需将 `BASE_URL` 调整为后端实际端口。
+  - [backend/verify_agent.py](../backend/verify_agent.py) 使用 `unittest.mock` 演示接口的 JSON 解析与 Markdown 剥离逻辑。
 
-### 2.2 目录结构
-```
-Project Root
-├── backend/            # Flask 后端
-│   ├── app.py          # API 服务与 Lean 模拟逻辑
-│   └── Dockerfile
-├── frontend/           # React 前端
-│   ├── src/components/ # 数学可视化组件 (VectorAddition, MatrixTransform, EigenVisualizer)
-│   └── Dockerfile
-├── Docs/               # 项目文档与资源
-└── docker-compose.yml  # 容器编排配置
-```
+## 4. 运行与调试
 
-## 3. 核心功能实现 (Core Features)
+1) 配置环境变量：在 `backend/.env`（若有 `.env.example` 先复制再重命名）中写入 `DEEPSEEK_API_KEY=<你的 key>`。
+2) 安装依赖：`pip install -r backend/requirements.txt`。
+3) 启动后端：`python backend/app.py`，默认监听 `http://127.0.0.1:5500/chat`。
+4) 启动前端：直接用浏览器打开 [index.html](../index.html)（或启一个静态服务器）。聊天框会向上面的接口发起请求，请确保同源或允许 CORS。
+5) 快速自测：
+   - 浏览器聊天输入 “展示一个 90 度的旋转矩阵”，应出现矩阵作用向量的动画；
+   - `curl -X POST http://127.0.0.1:5500/chat -H "Content-Type: application/json" -d '{"message":"展示剪切矩阵"}'` 查看原始 JSON 响应；
+   - 若使用 [backend/example_scenarios.py](../backend/example_scenarios.py)，请把 `BASE_URL` 改为 `http://127.0.0.1:5500/chat`。
 
-### 3.1 向量加法交互演示 (Vector Addition)
-- **功能**: 用户可拖拽两个向量 $\vec{u}$ 和 $\vec{v}$ 的终点。
-- **视觉反馈**: 实时显示平移后的辅助线（平行四边形法则）以及合向量 $\vec{u}+\vec{v}$，直观展示向量加法的几何意义。
+## 5. 文件概览
 
-### 3.2 矩阵线性变换 (Matrix Transformation)
-- **功能**: 用户通过拖拽基向量 $\hat{i}$ 和 $\hat{j}$ 来定义变换矩阵 $A$。
-- **视觉反馈**: 整个坐标网格随之发生倾斜、旋转或缩放，用户可放置测试点观察变换前后的位置映射，深刻理解“矩阵即变换”的核心概念。
+- [index.html](../index.html)：核心前端，包含 UI、数学内核、动画、AI 桥接与聊天 UI。
+- [parse_agent_response.js](../parse_agent_response.js)：演示如何在前端解析 `operation`/`inputs`/`lean` 的示例脚本。
+- [backend/app.py](../backend/app.py)：Flask 服务，封装 DeepSeek Chat 调用与 JSON 解析。
+- [backend/example_scenarios.py](../backend/example_scenarios.py)：调用 /chat 的演示代码。
+- [backend/verify_agent.py](../backend/verify_agent.py)：Mock 自检脚本，验证 Markdown 剥离和字段存在性。
+- [backend/requirements.txt](../backend/requirements.txt)：后端依赖（flask、flask-cors、openai、python-dotenv）。
+- [README.md](../README.md)：简要启动说明（记得替换/配置 API Key）。
 
-### 3.3 特征值与特征向量可视化 (Eigenvalues Visualization)
-- **功能**: 用户输入矩阵数值，并在坐标系中拖动向量 $\vec{x}$。
-- **创新点**: 
-  - **Ground Truth 对比**: 调用后端 NumPy 计算真实特征值供参考。
-  - **交互式发现**: 当用户手动将 $\vec{x}$ 拖动到与 $A\vec{x}$ 共线的位置时，系统会自动高亮并提示 "Found Eigenvector!"，将抽象的特征值概念具象化为“方向不变”的几何特征。
+## 6. 后续改进方向
 
-### 3.4 形式化验证 Agent 演示 (Formalization Agent)
-- **功能**: 模拟“从自然语言到 Lean 代码”的转换过程。
-- **流程**: 前端提交数学问题 -> 后端“Agent”生成对应的 Lean 4 代码模板 -> 模拟运行验证器并返回结果。这展示了未来数学工具的发展方向——AI辅助定理证明。
-
-## 4. 结论与展望 (Conclusion)
-
-本项目成功实现了一个低代码、高交互的线性代数可视化平台。通过 Docker 容器化部署，极大地降低了环境配置门槛。特别是形式化验证模块的引入，虽然目前处于演示阶段，但为后续引入真正的 Lean 4 编译器和大规模 Mathlib 库奠定了架构基础。该系统不仅适用于辅助教学，也展示了 AI 在数学教育和研究中的巨大潜力。
-
-
-
-
-# 修改之后
-矩阵变换 (MatrixTransform)：
-现在背景里有一个深色的原始网格，和一个跟随变换的浅色网格。
-中心还增加了一个淡蓝色的“单位正方形”。
-动手试试：拖动红蓝基向量，您会直观地看到这个正方形是如何被“压扁”、“拉长”或“旋转”的。这就是线性变换的几何本质！
-特征值可视化 (EigenVisualizer)：
-我给橙色向量添加了一条虚线延长线 (Span Line)。
-我还把真实的特征向量作为半透明的“幽灵”显示在图上。
-游戏目标：您现在的任务变得非常简单直观——把橙色向量拖动去重合那些“幽灵线”。一旦重合，紫色向量 $Ax$ 就会稳稳地落在虚线上，那一行绿色的 "Found Eigenvector!" 就会亮起。
+- 完善 Lean 集成：为 `lean_code` 提供真实的编译/检查环节，并增加 Mathlib 依赖示例。
+- 统一端口与脚本：将示例脚本默认端口改为 5500，避免新用户踩坑。
+- 数据持久化：将 `HistoryManager` 状态导出为 JSON，支持课后回放与分享。
+- 移动端体验：为触屏优化拖拽、缩放手势，并压缩 Canvas 绘制开销。
+- 更丰富的教学模板：预置更多矩阵类型（旋转、缩放、剪切、投影、退化矩阵）与任务化互动提示。
