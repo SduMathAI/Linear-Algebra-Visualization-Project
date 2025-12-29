@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<<<<<<< HEAD
+    <title>几何线性代数实验室 (GeoLinAlg) </title>
+=======
     <title>几何线性代数实验室 (GeoLinAlg) - SVD分解版</title>
+>>>>>>> main
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -403,16 +407,40 @@
             text-align: center
         }
 
+        /* 聊天窗口容器 - 核心：强制十字光标穿透所有子元素生效，优先级拉满 */
         #chat-container {
             position: absolute;
-            bottom: 20px;
             right: 20px;
+            bottom: 20px;
             width: 320px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            pointer-events: none;
-            z-index: 1000
+            pointer-events: auto;
+            z-index: 1000;
+            user-select: none;
+            -webkit-user-drag: none;
+            box-sizing: border-box;
+            /* ✅ 核心1：强制生效 原生十字移动光标（你要的十字键形态）+ 优先级锁死 */
+            cursor: move !important;
+        }
+        /* ✅ 鼠标按住拖动时，保持十字光标不变 */
+        #chat-container:active {
+            cursor: move !important;
+        }
+        /* ✅ 关键修复：聊天内容区 - 悬浮时显示文本光标（可选中文字），按住鼠标瞬间强制变回十字光标（可拖动） */
+        #chat-history {
+            user-select: text;
+            -webkit-user-select: text;
+            cursor: text;
+        }
+        #chat-history:active {
+            cursor: move !important;
+        }
+        /* ✅ 输入框/发送按钮/输入区 - 正常默认光标，不影响使用 */
+        #chat-input, #btn-send, #chat-input-area {
+            cursor: default;
+            pointer-events: auto;
         }
 
         #chat-history {
@@ -2473,6 +2501,52 @@
             passive: false
         });
         historyManager.init();
+        // ===== 聊天窗口可拖动 核心代码 start =====
+        const chatContainer = document.getElementById('chat-container');
+        let isDraging = false;
+        let startClientX, startClientY;
+        let moveX = 0, moveY = 0;
+
+        // 鼠标按下：开始拖动，只记录坐标，不修改任何定位属性
+        chatContainer.addEventListener('mousedown', function(e) {
+            // 只允许点击 聊天窗口/消息区 拖动，输入框/发送按钮不受影响
+            if (e.target.id === 'chat-container' || e.target.id === 'chat-history') {
+                isDraging = true;
+                e.preventDefault(); // 阻止文本选中、浏览器默认行为，杜绝干扰
+                // 记录鼠标按下时的原始坐标
+                startClientX = e.clientX;
+                startClientY = e.clientY;
+                chatContainer.style.cursor = 'grabbing';
+            }
+        });
+
+        // 鼠标移动：核心拖动逻辑，无任何定位切换，0计算误差
+        document.addEventListener('mousemove', function(e) {
+            if (!isDraging) return;
+            // 计算鼠标移动的差值，仅做增量计算，无任何复杂逻辑
+            const dx = e.clientX - startClientX;
+            const dy = e.clientY - startClientY;
+            // 核心：用transform位移，不修改原定位，彻底规避锚点冲突
+            chatContainer.style.transform = `translate(${moveX + dx}px, ${moveY + dy}px)`;
+        });
+
+        // 鼠标松开：固化位移距离，下次拖动延续当前位置
+        document.addEventListener('mouseup', function() {
+            if (!isDraging) return;
+            isDraging = false;
+            chatContainer.style.cursor = 'grab';
+            // 保存本次拖动的最终位移量，解决拖动记忆问题
+            const domMatrix = new DOMMatrix(window.getComputedStyle(chatContainer).transform);
+            moveX = domMatrix.e;
+            moveY = domMatrix.f;
+        });
+
+        // 鼠标离开页面，强制结束拖动，防止卡死拖拽状态
+        document.addEventListener('mouseleave', () => {
+            isDraging = false;
+            chatContainer.style.cursor = 'grab';
+        });
+        // ===== 聊天窗口可拖动 核心代码 end =====
         const AIBridge = {
             handleResponse(d) {
                 hideTyping();
@@ -2616,4 +2690,8 @@
     </script>
 </body>
 
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> main
